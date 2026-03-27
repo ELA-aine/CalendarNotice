@@ -34,7 +34,7 @@ const API = {
     const { token, owner, repo, branch } = this.getConfig();
     const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
     const body = {
-      message: `chore: update ${path} via BirthdayNotice`,
+      message: `chore: update ${path} via Joshua Fellowship Birthday Calendar`,
       content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
       branch,
     };

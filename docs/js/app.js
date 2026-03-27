@@ -39,7 +39,7 @@ function initNav() {
   ];
 
   nav.innerHTML = `
-    <a class="nav-brand" href="index.html"><span>🎂</span> BirthdayNotice</a>
+    <a class="nav-brand" href="index.html"><span>🎂</span> Joshua Fellowship Birthday Calendar</a>
     ${links.map(l => `<a href="${l.href}" class="nav-link ${l.id === active ? 'active' : ''}">${l.label}</a>`).join('')}
   `;
 

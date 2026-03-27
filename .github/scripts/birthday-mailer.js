@@ -94,7 +94,7 @@ function buildEmailHtml(upcoming) {
 
       <div style="text-align:center;margin-top:24px;padding-top:20px;border-top:1px solid #FFE4F0">
         <p style="color:#9CA3AF;font-size:0.8rem;margin:0">
-          Sent with 💕 by <strong>BirthdayNotice</strong><br/>
+          Sent with 💕 by <strong>Joshua Fellowship Birthday Calendar</strong><br/>
           Automated birthday reminders via GitHub Actions
         </p>
       </div>
@@ -116,7 +116,7 @@ function buildEmailText(upcoming) {
     return `• ${b.name} — ${monthName(b.month)} ${b.day}${b.year ? ', ' + b.year : ''} (${daysLabel})${age ? ` — Turning ${formatOrdinal(age)}` : ''}\n  ${faithLine}`;
   }).join('\n\n');
 
-  return `🎂 Birthday Reminder\n${'='.repeat(40)}\n\n${lines}\n\n— BirthdayNotice (GitHub Actions)`;
+  return `🎂 Birthday Reminder\n${'='.repeat(40)}\n\n${lines}\n\n— Joshua Fellowship Birthday Calendar (GitHub Actions)`;
 }
 
 // ── Test mode email ───────────────────────────────────────────────────
@@ -135,7 +135,7 @@ function buildTestEmailHtml() {
     </div>
     <div style="background:white;border-radius:0 0 18px 18px;padding:28px 32px;border:1.5px solid #FFE4F0;border-top:none">
       <p style="color:#374151;font-size:0.95rem;margin:0 0 16px">
-        ✅ Your <strong>BirthdayNotice</strong> email setup is working correctly!
+        ✅ Your <strong>Joshua Fellowship Birthday Calendar</strong> email setup is working correctly!
       </p>
       <p style="color:#6B7280;font-size:0.88rem;margin:0 0 16px">
         This test email was triggered manually from the app. Real birthday notifications will be sent automatically every day at <strong>8:00 AM UTC</strong> when birthdays are coming up.
@@ -147,7 +147,7 @@ function buildTestEmailHtml() {
       </div>
       <div style="text-align:center;margin-top:24px;padding-top:20px;border-top:1px solid #FFE4F0">
         <p style="color:#9CA3AF;font-size:0.8rem;margin:0">
-          Sent with 💕 by <strong>BirthdayNotice</strong><br/>
+          Sent with 💕 by <strong>Joshua Fellowship Birthday Calendar</strong><br/>
           Automated birthday reminders via GitHub Actions
         </p>
       </div>
@@ -191,11 +191,11 @@ async function main() {
     const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: GMAIL_USER, pass: GMAIL_PASS } });
     const toList = emails.map(e => e.email).join(', ');
     const info = await transporter.sendMail({
-      from: `"🎂 BirthdayNotice" <${GMAIL_USER}>`,
+      from: `"🎂 Joshua Fellowship Birthday Calendar" <${GMAIL_USER}>`,
       to: toList,
-      subject: '🎉 BirthdayNotice — Test Email',
+      subject: '🎉 Joshua Fellowship Birthday Calendar — Test Email',
       html: buildTestEmailHtml(),
-      text: '✅ BirthdayNotice test email — your email setup is working correctly! Real birthday notifications will be sent automatically at 8:00 AM UTC.',
+      text: '✅ Joshua Fellowship Birthday Calendar test email — your email setup is working correctly! Real birthday notifications will be sent automatically at 8:00 AM UTC.',
     });
     console.log(`✅ Test email sent! Message ID: ${info.messageId}`);
     console.log(`   Recipients: ${toList}`);
@@ -241,7 +241,7 @@ async function main() {
   const toList = emails.map(e => e.email).join(', ');
 
   const mailOptions = {
-    from: `"🎂 BirthdayNotice" <${GMAIL_USER}>`,
+    from: `"🎂 Joshua Fellowship Birthday Calendar" <${GMAIL_USER}>`,
     to: toList,
     subject,
     text: buildEmailText(upcoming),
