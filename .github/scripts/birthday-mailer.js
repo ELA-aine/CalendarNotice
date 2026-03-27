@@ -51,7 +51,7 @@ function buildEmailHtml(upcoming) {
                     : `📅 In ${days} days`;
 
     return `
-      <div style="background:#FFF5FB;border:1.5px solid #FFE4F0;border-radius:12px;padding:16px 20px;margin-bottom:12px">
+      <div style="background-color:#FBCFE8;background-image:linear-gradient(135deg,#FCE7F3,#F9A8D4);border:1.5px solid #F472B6;border-radius:12px;padding:16px 20px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
           <span style="font-size:1.4rem">${genderIcon}</span>
           <div>
@@ -79,10 +79,10 @@ function buildEmailHtml(upcoming) {
   <div style="max-width:560px;margin:0 auto">
 
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#E8528A,#9333EA);border-radius:18px 18px 0 0;padding:32px 32px;text-align:center">
+    <div style="background-color:#BE185D;background-image:linear-gradient(135deg,#F472B6,#BE185D);border-radius:18px 18px 0 0;padding:32px 32px;text-align:center">
       <div style="font-size:3rem;margin-bottom:10px">🎂</div>
       <h1 style="color:white;margin:0 0 8px;font-size:1.8rem;font-weight:900;letter-spacing:-0.02em">Birthday Reminder!</h1>
-      <p style="color:white;margin:0;font-size:0.92rem;font-weight:600;background:rgba(0,0,0,0.18);display:inline-block;padding:4px 14px;border-radius:999px">${todayLabel}</p>
+      <p style="color:white;margin:0;font-size:0.92rem;font-weight:600;background-color:#9D174D;display:inline-block;padding:4px 14px;border-radius:999px">${todayLabel}</p>
     </div>
 
     <!-- Body -->
