@@ -22,7 +22,7 @@
     "year": 1900,
     "gender": "male",
     "christian": false,
-    "attends": true,
+    "attends": false,
     "contact": {
       "wechat": null,
       "whatsapp": null,
