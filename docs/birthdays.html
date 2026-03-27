@@ -5,6 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🎂 Joshua Fellowship Birthday Calendar — Birthdays</title>
   <link rel="stylesheet" href="css/app.css" />
+  <style>
+    .contact-icon {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: none; cursor: pointer; font-size: 1rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--bg); transition: background 0.2s;
+    }
+    .contact-icon:hover { background: var(--primary-light); }
+
+    .contact-popover {
+      position: fixed;
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+      z-index: 300;
+      min-width: 180px;
+      animation: popIn 0.15s ease;
+      display: none;
+    }
+    .contact-popover.open { display: block; }
+    .contact-popover-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.88rem; font-weight: 700; padding: 4px 0;
+    }
+    .contact-popover-row span { color: var(--text-muted); font-weight: 600; word-break: break-all; }
+  </style>
 </head>
 <body>
 
@@ -264,6 +292,9 @@
   </div>
 </div>
 
+<!-- Contact popover -->
+<div class="contact-popover" id="contact-popover"></div>
+
 <script src="js/api.js"></script>
 <script src="js/app.js"></script>
 <script>
@@ -338,11 +369,11 @@
           <td><span class="badge ${b.christian ? 'badge-purple' : 'badge-yellow'}">${b.christian ? '✝️ Christian' : '🌸 Non-Christian'}</span></td>
           <td><span class="badge ${b.attends !== false ? 'badge-green' : 'badge-red'}">${b.attends !== false ? '✅ Often' : '🔸 Not Often'}</span></td>
           <td>
-            <div style="display:flex;flex-direction:column;gap:3px;font-size:0.8rem">
-              ${b.contact?.wechat   ? `<span>💬 ${b.contact.wechat}</span>`   : ''}
-              ${b.contact?.whatsapp ? `<span>📱 ${b.contact.whatsapp}</span>` : ''}
-              ${b.contact?.email    ? `<span>✉️ ${b.contact.email}</span>`    : ''}
-              ${!b.contact?.wechat && !b.contact?.whatsapp && !b.contact?.email ? '<span style="color:var(--text-light)">—</span>' : ''}
+            <div style="display:flex;gap:4px;align-items:center">
+              ${b.contact?.wechat   ? `<button class="contact-icon" onclick="showContact(event,'${b.id}','wechat')"   title="WeChat">💬</button>`   : ''}
+              ${b.contact?.whatsapp ? `<button class="contact-icon" onclick="showContact(event,'${b.id}','whatsapp')" title="WhatsApp">📱</button>` : ''}
+              ${b.contact?.email    ? `<button class="contact-icon" onclick="showContact(event,'${b.id}','email')"    title="Email">✉️</button>`    : ''}
+              ${!b.contact?.wechat && !b.contact?.whatsapp && !b.contact?.email ? '<span style="color:var(--text-light);font-size:0.85rem">—</span>' : ''}
             </div>
           </td>
           <td style="text-align:right">
@@ -489,6 +520,36 @@
   }
 
   loadBirthdays();
+
+  // ── Contact popover ───────────────────────────────────────────────────
+  const CONTACT_LABELS = { wechat: '💬 WeChat', whatsapp: '📱 WhatsApp', email: '✉️ Email' };
+
+  function showContact(e, id, type) {
+    e.stopPropagation();
+    const b = allBirthdays.find(x => x.id === id);
+    if (!b) return;
+
+    const pop = document.getElementById('contact-popover');
+
+    // Build all available contacts for this person
+    const rows = ['wechat','whatsapp','email']
+      .filter(t => b.contact?.[t])
+      .map(t => `<div class="contact-popover-row">${CONTACT_LABELS[t]} <span>${b.contact[t]}</span></div>`)
+      .join('');
+
+    pop.innerHTML = `<div style="font-weight:800;margin-bottom:6px;font-size:0.85rem">${b.name}</div>${rows}`;
+
+    // Position near the clicked button
+    const rect = e.currentTarget.getBoundingClientRect();
+    const scrollY = window.scrollY;
+    pop.style.top  = `${rect.bottom + scrollY + 6}px`;
+    pop.style.left = `${Math.min(rect.left, window.innerWidth - 220)}px`;
+    pop.classList.add('open');
+  }
+
+  document.addEventListener('click', () => {
+    document.getElementById('contact-popover').classList.remove('open');
+  });
 
   // ── CSV Import ────────────────────────────────────────────────────────
   let parsedRows = [];
