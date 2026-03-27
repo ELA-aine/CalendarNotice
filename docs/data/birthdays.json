@@ -1,20 +1,5 @@
 [
   {
-    "id": "mn89f11xkv162",
-    "name": "eg2ege2e",
-    "month": 3,
-    "day": 27,
-    "year": 2003,
-    "gender": "female",
-    "christian": false,
-    "attends": true,
-    "contact": {
-      "wechat": "elianm212317994",
-      "whatsapp": null,
-      "email": null
-    }
-  },
-  {
     "id": "mn89s5hwyiprl",
     "name": "yoyo",
     "month": 11,
@@ -22,24 +7,6 @@
     "year": 2009,
     "gender": "male",
     "christian": true
-  },
-  {
-    "id": "mn8alajdyxuiy",
-    "name": "S",
-    "month": 4,
-    "day": 26,
-    "year": null,
-    "gender": "male",
-    "christian": true
-  },
-  {
-    "id": "mn8an5a8uop7d",
-    "name": "Steven",
-    "month": 4,
-    "day": 2,
-    "year": null,
-    "gender": "male",
-    "christian": false
   },
   {
     "id": "mn8aqnjse8klg",
