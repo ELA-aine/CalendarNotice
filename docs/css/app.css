@@ -204,6 +204,7 @@ body {
   border-radius: var(--radius-full);
   font-size: 0.78rem;
   font-weight: 800;
+  white-space: nowrap;
   letter-spacing: 0.2px;
 }
 
