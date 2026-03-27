@@ -21,7 +21,10 @@
       <h1>🎂 Birthdays</h1>
       <p>Manage everyone's special days</p>
     </div>
-    <button class="btn btn-primary" onclick="openAddModal()">＋ Add Birthday</button>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="openImportModal()">📂 Import CSV</button>
+      <button class="btn btn-primary" onclick="openAddModal()">＋ Add Birthday</button>
+    </div>
   </div>
 
   <!-- Search & filter -->
@@ -172,6 +175,64 @@
     <div style="display:flex;gap:10px;justify-content:flex-end">
       <button class="btn btn-ghost" onclick="closeModal('delete-modal')">Cancel</button>
       <button class="btn btn-danger" onclick="confirmDelete()">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import CSV modal -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <h2>📂 Import CSV</h2>
+      <button class="modal-close" onclick="closeImportModal()">✕</button>
+    </div>
+
+    <!-- Step 1: Upload -->
+    <div id="import-step-1">
+      <div style="border:2px dashed var(--border);border-radius:var(--radius-sm);padding:32px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg)"
+           id="drop-zone"
+           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)"
+           onclick="document.getElementById('csv-file').click()">
+        <div style="font-size:2.5rem;margin-bottom:10px">📄</div>
+        <div style="font-weight:800;margin-bottom:4px">Drop your CSV here or click to browse</div>
+        <div style="font-size:0.85rem;color:var(--text-light)">Accepts .csv files</div>
+      </div>
+      <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleFileSelect(event)" />
+
+      <div class="card mt-3" style="background:var(--accent-light);border-color:var(--accent);padding:14px 18px">
+        <div style="font-weight:800;margin-bottom:6px;font-size:0.88rem">📋 Expected columns (any order, auto-detected):</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:6px">
+          <span class="badge badge-pink">name <em style="font-weight:400">(required)</em></span>
+          <span class="badge badge-blue">month <em style="font-weight:400">or</em> birth_month</span>
+          <span class="badge badge-blue">day <em style="font-weight:400">or</em> birth_day</span>
+          <span class="badge badge-purple">year <em style="font-weight:400">(optional)</em></span>
+          <span class="badge badge-green">gender <em style="font-weight:400">male/female/other</em></span>
+          <span class="badge badge-yellow">christian <em style="font-weight:400">true/false/yes/no</em></span>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;font-size:0.82rem;color:var(--text-light);text-align:center">
+        💡 Download a <a href="#" onclick="downloadTemplate();return false" style="color:var(--primary)">sample template</a> to get started
+      </div>
+    </div>
+
+    <!-- Step 2: Preview -->
+    <div id="import-step-2" style="display:none">
+      <div id="import-summary" style="margin-bottom:14px"></div>
+      <div style="max-height:280px;overflow-y:auto;border:1.5px solid var(--border);border-radius:var(--radius-sm)">
+        <table class="table-cute" id="import-preview-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Date</th><th>Gender</th><th>Faith</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="import-preview-body"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+        <button class="btn btn-ghost" onclick="resetImport()">← Back</button>
+        <button class="btn btn-primary" id="import-confirm-btn" onclick="confirmImport()">✅ Import All</button>
+      </div>
     </div>
   </div>
 </div>
@@ -378,6 +439,192 @@
   }
 
   loadBirthdays();
+
+  // ── CSV Import ────────────────────────────────────────────────────────
+  let parsedRows = [];
+
+  function openImportModal() {
+    resetImport();
+    openModal('import-modal');
+  }
+
+  function closeImportModal() {
+    closeModal('import-modal');
+    resetImport();
+  }
+
+  function resetImport() {
+    parsedRows = [];
+    document.getElementById('import-step-1').style.display = 'block';
+    document.getElementById('import-step-2').style.display = 'none';
+    document.getElementById('csv-file').value = '';
+    const dz = document.getElementById('drop-zone');
+    dz.style.borderColor = 'var(--border)';
+    dz.style.background = 'var(--bg)';
+  }
+
+  function onDragOver(e) {
+    e.preventDefault();
+    const dz = document.getElementById('drop-zone');
+    dz.style.borderColor = 'var(--primary)';
+    dz.style.background = 'var(--primary-light)';
+  }
+
+  function onDragLeave(e) {
+    const dz = document.getElementById('drop-zone');
+    dz.style.borderColor = 'var(--border)';
+    dz.style.background = 'var(--bg)';
+  }
+
+  function onDrop(e) {
+    e.preventDefault();
+    onDragLeave(e);
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.csv')) parseCSV(file);
+    else toast('Please drop a .csv file', 'warning');
+  }
+
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) parseCSV(file);
+  }
+
+  function parseCSV(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      const lines = text.trim().split(/\r?\n/);
+      if (lines.length < 2) { toast('CSV seems empty', 'warning'); return; }
+
+      // Parse headers — normalize to lowercase, trim, strip BOM
+      const headers = lines[0].replace(/^\uFEFF/, '').split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+
+      // Map column names flexibly
+      const col = (names) => {
+        for (const n of names) {
+          const i = headers.indexOf(n);
+          if (i !== -1) return i;
+        }
+        return -1;
+      };
+
+      const iName      = col(['name', 'full name', 'fullname', 'person']);
+      const iMonth     = col(['month', 'birth_month', 'birthmonth', 'bday_month']);
+      const iDay       = col(['day', 'birth_day', 'birthday', 'bday_day', 'date']);
+      const iYear      = col(['year', 'birth_year', 'birthyear', 'bday_year']);
+      const iGender    = col(['gender', 'sex']);
+      const iChristian = col(['christian', 'faith', 'religion', 'is_christian']);
+
+      if (iName === -1 || iMonth === -1 || iDay === -1) {
+        toast('Could not find required columns: name, month, day', 'error');
+        return;
+      }
+
+      parsedRows = [];
+      const errors = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+
+        // Handle quoted fields with commas
+        const cols = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
+                  || lines[i].split(',');
+        const get = (idx) => idx === -1 ? '' : (cols[idx] || '').trim().replace(/^"|"$/g, '');
+
+        const name  = get(iName);
+        const month = parseInt(get(iMonth));
+        const day   = parseInt(get(iDay));
+        const year  = parseInt(get(iYear)) || null;
+
+        if (!name) { errors.push(`Row ${i + 1}: missing name`); continue; }
+        if (!month || month < 1 || month > 12) { errors.push(`Row ${i + 1}: invalid month`); continue; }
+        if (!day || day < 1 || day > 31) { errors.push(`Row ${i + 1}: invalid day`); continue; }
+
+        // Normalize gender
+        const rawGender = get(iGender).toLowerCase();
+        let gender = 'other';
+        if (['male', 'm', 'boy', 'man'].includes(rawGender)) gender = 'male';
+        else if (['female', 'f', 'girl', 'woman'].includes(rawGender)) gender = 'female';
+
+        // Normalize christian
+        const rawFaith = get(iChristian).toLowerCase();
+        const christian = ['true', 'yes', '1', 'christian'].includes(rawFaith);
+
+        // Check duplicate by name + month + day
+        const isDup = allBirthdays.some(b => b.name.toLowerCase() === name.toLowerCase() && b.month === month && b.day === day);
+
+        parsedRows.push({ id: generateId(), name, month, day, year, gender, christian, _dup: isDup, _error: null });
+      }
+
+      if (errors.length) toast(`⚠️ Skipped ${errors.length} row(s): ${errors[0]}`, 'warning');
+
+      showPreview();
+    };
+    reader.readAsText(file);
+  }
+
+  function showPreview() {
+    const valid = parsedRows.filter(r => !r._dup);
+    const dups  = parsedRows.filter(r => r._dup);
+
+    document.getElementById('import-summary').innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:2px">
+        <span class="badge badge-green">✅ ${valid.length} new</span>
+        ${dups.length ? `<span class="badge badge-yellow">⚠️ ${dups.length} duplicate${dups.length > 1 ? 's' : ''} (will skip)</span>` : ''}
+        <span class="badge badge-pink">${parsedRows.length} total rows</span>
+      </div>
+    `;
+
+    document.getElementById('import-confirm-btn').textContent = `✅ Import ${valid.length} Birthdays`;
+    document.getElementById('import-confirm-btn').disabled = valid.length === 0;
+
+    const tbody = document.getElementById('import-preview-body');
+    tbody.innerHTML = parsedRows.map(r => `
+      <tr style="${r._dup ? 'opacity:0.5' : ''}">
+        <td><strong>${r.name}</strong></td>
+        <td>${formatDate(r.year, r.month, r.day)}</td>
+        <td>${genderEmoji(r.gender)} ${r.gender}</td>
+        <td>${r.christian ? '✝️' : '🌸'}</td>
+        <td>${r._dup ? '<span class="badge badge-yellow">duplicate</span>' : '<span class="badge badge-green">new</span>'}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('import-step-1').style.display = 'none';
+    document.getElementById('import-step-2').style.display = 'block';
+  }
+
+  async function confirmImport() {
+    if (!API.isConfigured()) { toast('Configure GitHub settings first! ⚙️', 'warning'); return; }
+
+    const toAdd = parsedRows.filter(r => !r._dup).map(({ _dup, _error, ...b }) => b);
+    if (!toAdd.length) return;
+
+    const btn = document.getElementById('import-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+      const list = [...allBirthdays, ...toAdd];
+      await API.saveBirthdays(list);
+      allBirthdays = list;
+      renderTable(allBirthdays);
+      closeImportModal();
+      toast(`Imported ${toAdd.length} birthday${toAdd.length > 1 ? 's' : ''}! 🎉`);
+    } catch (err) {
+      toast('Import failed: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = `✅ Import ${toAdd.length} Birthdays`;
+    }
+  }
+
+  function downloadTemplate() {
+    const csv = `name,month,day,year,gender,christian\nJane Doe,3,26,1995,female,true\nJohn Smith,7,4,1990,male,false\nAlex Kim,11,15,,other,false`;
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'birthdays-template.csv';
+    a.click();
+  }
 </script>
 </body>
 </html>
