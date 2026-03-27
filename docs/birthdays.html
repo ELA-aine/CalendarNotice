@@ -286,8 +286,12 @@
           <span class="badge badge-blue">month <em style="font-weight:400">or</em> birth_month</span>
           <span class="badge badge-blue">day <em style="font-weight:400">or</em> birth_day</span>
           <span class="badge badge-purple">year <em style="font-weight:400">(optional)</em></span>
-          <span class="badge badge-green">gender <em style="font-weight:400">male/female/other</em></span>
+          <span class="badge badge-green">gender <em style="font-weight:400">male/female</em></span>
           <span class="badge badge-yellow">christian <em style="font-weight:400">true/false/yes/no</em></span>
+          <span class="badge badge-green">attends <em style="font-weight:400">true/false/yes/no</em></span>
+          <span class="badge badge-purple">wechat <em style="font-weight:400">(optional)</em></span>
+          <span class="badge badge-purple">whatsapp <em style="font-weight:400">(optional)</em></span>
+          <span class="badge badge-purple">contact_email <em style="font-weight:400">(optional)</em></span>
         </div>
       </div>
 
@@ -303,7 +307,7 @@
         <table class="table-cute" id="import-preview-table">
           <thead>
             <tr>
-              <th>Name</th><th>Date</th><th>Gender</th><th>Faith</th><th>Status</th>
+              <th>Name</th><th>Date</th><th>Gender</th><th>Faith</th><th>Fellowship</th><th>Contact</th><th>Status</th>
             </tr>
           </thead>
           <tbody id="import-preview-body"></tbody>
@@ -883,6 +887,10 @@
       const iYear      = col(['year', 'birth_year', 'birthyear', 'bday_year']);
       const iGender    = col(['gender', 'sex']);
       const iChristian = col(['christian', 'faith', 'religion', 'is_christian']);
+      const iAttends   = col(['attends', 'fellowship', 'attends_fellowship', 'often']);
+      const iWechat    = col(['wechat', 'wechat_id', 'wechat id']);
+      const iWhatsapp  = col(['whatsapp', 'whatsapp_number', 'whatsapp number', 'phone']);
+      const iEmail     = col(['contact_email', 'contact email', 'email']);
 
       if (iName === -1 || iMonth === -1 || iDay === -1) {
         toast('Could not find required columns: name, month, day', 'error');
@@ -919,10 +927,21 @@
         const rawFaith = get(iChristian).toLowerCase();
         const christian = ['true', 'yes', '1', 'christian'].includes(rawFaith);
 
+        // Normalize attends (default true if column absent)
+        const rawAttends = get(iAttends).toLowerCase();
+        const attends = iAttends === -1 ? true : !['false', 'no', '0', 'not often'].includes(rawAttends);
+
+        // Contact fields
+        const contact = {
+          wechat:   get(iWechat)   || null,
+          whatsapp: get(iWhatsapp) || null,
+          email:    get(iEmail)    || null,
+        };
+
         // Check duplicate by name + month + day
         const isDup = allBirthdays.some(b => b.name.toLowerCase() === name.toLowerCase() && b.month === month && b.day === day);
 
-        parsedRows.push({ id: generateId(), name, month, day, year, gender, christian, _dup: isDup, _error: null });
+        parsedRows.push({ id: generateId(), name, month, day, year, gender, christian, attends, contact, _dup: isDup, _error: null });
       }
 
       if (errors.length) toast(`⚠️ Skipped ${errors.length} row(s): ${errors[0]}`, 'warning');
@@ -954,6 +973,11 @@
         <td>${formatDate(r.year, r.month, r.day)}</td>
         <td>${genderEmoji(r.gender)} ${r.gender}</td>
         <td>${r.christian ? '✝️' : '🌸'}</td>
+        <td>${r.attends ? '✅' : '🔸'}</td>
+        <td style="font-size:0.85rem">
+          ${r.contact?.wechat   ? '💬 ' : ''}${r.contact?.whatsapp ? '📱 ' : ''}${r.contact?.email ? '✉️' : ''}
+          ${!r.contact?.wechat && !r.contact?.whatsapp && !r.contact?.email ? '—' : ''}
+        </td>
         <td>${r._dup ? '<span class="badge badge-yellow">duplicate</span>' : '<span class="badge badge-green">new</span>'}</td>
       </tr>
     `).join('');
@@ -987,7 +1011,7 @@
   }
 
   function downloadTemplate() {
-    const csv = `name,month,day,year,gender,christian\nJane Doe,3,26,1995,female,true\nJohn Smith,7,4,1990,male,false\nAlex Kim,11,15,,other,false`;
+    const csv = `name,month,day,year,gender,christian,attends,wechat,whatsapp,contact_email\nJane Doe,3,26,1995,female,true,true,jane_wechat,,jane@email.com\nJohn Smith,7,4,1990,male,false,true,,+1234567890,\nAlex Kim,11,15,,female,false,false,,,`;
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
