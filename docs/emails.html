@@ -94,6 +94,24 @@
   </div>
 </div>
 
+<!-- Test email picker modal -->
+<div class="modal-overlay" id="test-email-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h2>🧪 Send Test Email</h2>
+      <button class="modal-close" onclick="closeModal('test-email-modal')">✕</button>
+    </div>
+    <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px">
+      Select who should receive this test email:
+    </p>
+    <div id="test-email-list" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;margin-bottom:20px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('test-email-modal')">Cancel</button>
+      <button class="btn btn-primary" id="test-send-btn" onclick="confirmSendTest()">🧪 Send Test</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add email modal -->
 <div class="modal-overlay" id="email-modal">
   <div class="modal" style="max-width:440px">
@@ -431,7 +449,7 @@
     }
   }
 
-  async function sendTestEmail() {
+  function sendTestEmail() {
     if (!API.isConfigured()) {
       toast('Please configure GitHub settings first! ⚙️', 'warning');
       return;
@@ -440,6 +458,29 @@
       toast('Add at least one email address first! 📧', 'warning');
       return;
     }
+
+    // Populate the picker with all emails
+    const list = document.getElementById('test-email-list');
+    list.innerHTML = allEmails.map((e, i) => `
+      <label style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);cursor:pointer;background:white">
+        <input type="radio" name="test-recipient" value="${e.email}" ${i === 0 ? 'checked' : ''} style="accent-color:var(--primary);width:16px;height:16px;flex-shrink:0" />
+        <div>
+          <div style="font-weight:700;font-size:0.92rem">${e.name || e.email}</div>
+          ${e.name ? `<div style="font-size:0.78rem;color:var(--text-light)">${e.email}</div>` : ''}
+        </div>
+        ${e.active === false ? '<span class="badge" style="margin-left:auto;background:#F3F4F6;color:#6B7280">inactive</span>' : ''}
+      </label>
+    `).join('');
+
+    document.getElementById('test-email-modal').classList.add('open');
+  }
+
+  async function confirmSendTest() {
+    const selected = document.querySelector('input[name="test-recipient"]:checked');
+    if (!selected) { toast('Please select a recipient.', 'warning'); return; }
+
+    const recipient = selected.value;
+    closeModal('test-email-modal');
 
     const btn = document.getElementById('test-btn');
     btn.disabled = true;
@@ -456,12 +497,12 @@
             Accept: 'application/vnd.github.v3+json',
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ ref: branch || 'main', inputs: { test_mode: 'true', dry_run: 'false' } }),
+          body: JSON.stringify({ ref: branch || 'main', inputs: { test_mode: 'true', dry_run: 'false', test_recipient: recipient } }),
         }
       );
 
       if (res.status === 204) {
-        toast('Test email triggered! Check your inbox in ~1 minute 📬');
+        toast(`Test email sent to ${recipient} — check inbox in ~1 minute 📬`);
       } else if (res.status === 422) {
         toast('Workflow not found on that branch. Push first? 🤔', 'error');
       } else {

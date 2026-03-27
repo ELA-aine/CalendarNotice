@@ -14,6 +14,10 @@ on:
         description: 'Test mode (send a sample email to verify setup)'
         required: false
         default: 'false'
+      test_recipient:
+        description: 'Email address to receive the test (leave blank for all active)'
+        required: false
+        default: ''
 
 jobs:
   check-birthdays:
@@ -39,4 +43,5 @@ jobs:
           DAYS_AHEAD: '3'
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           TEST_MODE: ${{ github.event.inputs.test_mode || 'false' }}
+          TEST_RECIPIENT: ${{ github.event.inputs.test_recipient || '' }}
         run: node .github/scripts/birthday-mailer.js

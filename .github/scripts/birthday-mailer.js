@@ -14,8 +14,9 @@ const path = require('path');
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_PASS = process.env.GMAIL_PASS;
 const DAYS_AHEAD = parseInt(process.env.DAYS_AHEAD || '3', 10);
-const DRY_RUN    = process.env.DRY_RUN === 'true';
-const TEST_MODE  = process.env.TEST_MODE === 'true';
+const DRY_RUN         = process.env.DRY_RUN === 'true';
+const TEST_MODE       = process.env.TEST_MODE === 'true';
+const TEST_RECIPIENT  = (process.env.TEST_RECIPIENT || '').trim();
 
 // ── Helpers ───────────────────────────────────────────────────────────
 function daysUntilBirthday(month, day) {
@@ -128,10 +129,10 @@ function buildTestEmailHtml() {
 <head><meta charset="UTF-8"/></head>
 <body style="font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF0F8;margin:0;padding:20px">
   <div style="max-width:560px;margin:0 auto">
-    <div style="background-color:#7E22CE;background-image:linear-gradient(135deg,#BE185D,#7E22CE);border-radius:18px 18px 0 0;padding:32px 32px;text-align:center">
+    <div style="background-color:#BE185D;background-image:linear-gradient(135deg,#F472B6,#BE185D);border-radius:18px 18px 0 0;padding:32px 32px;text-align:center">
       <div style="font-size:3rem;margin-bottom:10px">🎉</div>
       <h1 style="color:#FFFFFF;margin:0 0 8px;font-size:2rem;font-weight:900;letter-spacing:-0.02em">Test Email — It works!</h1>
-      <p style="color:#FFFFFF;margin:0;font-size:0.92rem;font-weight:600;background-color:#5B0F9E;display:inline-block;padding:4px 14px;border-radius:999px">${todayLabel}</p>
+      <p style="color:#FFFFFF;margin:0;font-size:0.92rem;font-weight:600;background-color:#9D174D;display:inline-block;padding:4px 14px;border-radius:999px">${todayLabel}</p>
     </div>
     <div style="background:white;border-radius:0 0 18px 18px;padding:28px 32px;border:2px solid #D946EF;border-top:none">
       <p style="color:#374151;font-size:0.95rem;margin:0 0 16px">
@@ -190,8 +191,9 @@ async function main() {
       process.exit(1);
     }
     const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: GMAIL_USER, pass: GMAIL_PASS } });
-    const toList = emails.map(e => e.email).join(', ');
+    const toList = TEST_RECIPIENT || emails.map(e => e.email).join(', ');
     if (!toList) { console.log('ℹ️  No active recipients. Exiting.'); return; }
+    if (TEST_RECIPIENT) console.log(`   Sending test to specified recipient: ${TEST_RECIPIENT}`);
     const info = await transporter.sendMail({
       from: `"🎂 Joshua Fellowship Birthday Calendar" <${GMAIL_USER}>`,
       to: toList,
