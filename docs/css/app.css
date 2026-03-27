@@ -113,7 +113,7 @@ body {
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 9px;
   padding: 11px 22px;
   border-radius: var(--radius-full);
   border: none;
@@ -384,6 +384,8 @@ body {
 }
 .fc-button-primary:hover { background-color: var(--primary-dark) !important; border-color: var(--primary-dark) !important; }
 .fc-button-primary:not(:disabled).fc-button-active { background-color: var(--primary-dark) !important; border-color: var(--primary-dark) !important; }
+.fc .fc-button-group { gap: 6px !important; }
+.fc .fc-button-group .fc-button { border-radius: var(--radius-sm) !important; margin: 0 !important; }
 .fc-daygrid-event {
   border-radius: 6px !important;
   border: none !important;
