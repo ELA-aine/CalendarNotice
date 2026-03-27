@@ -84,15 +84,13 @@ function upcomingLabel(days) {
 }
 
 function genderEmoji(gender) {
-  if (gender === 'male')   return '👦';
   if (gender === 'female') return '👧';
-  return '🧑';
+  return '👦';
 }
 
 function avatarBg(gender) {
-  if (gender === 'male')   return '#E0F2FE';
   if (gender === 'female') return '#FFE4F0';
-  return '#F3E8FF';
+  return '#E0F2FE';
 }
 
 function generateId() {

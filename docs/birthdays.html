@@ -50,7 +50,6 @@
         <option value="">All genders</option>
         <option value="male">👦 Male</option>
         <option value="female">👧 Female</option>
-        <option value="other">🧑 Other</option>
       </select>
       <span id="count-label" class="badge badge-pink" style="margin-left:auto"></span>
     </div>
@@ -67,6 +66,8 @@
             <th>Age</th>
             <th>Coming up</th>
             <th>Faith</th>
+            <th>Fellowship</th>
+            <th>Contact</th>
             <th style="text-align:right">Actions</th>
           </tr>
         </thead>
@@ -140,9 +141,8 @@
         <div class="toggle-group">
           <button type="button" class="toggle-btn" data-val="male" onclick="selectToggle('gender', this)">👦 Male</button>
           <button type="button" class="toggle-btn" data-val="female" onclick="selectToggle('gender', this)">👧 Female</button>
-          <button type="button" class="toggle-btn" data-val="other" onclick="selectToggle('gender', this)">🧑 Other</button>
         </div>
-        <input type="hidden" id="f-gender" value="other" />
+        <input type="hidden" id="f-gender" value="male" />
       </div>
 
       <div class="form-group">
@@ -152,6 +152,33 @@
           <button type="button" class="toggle-btn" data-val="false" onclick="selectToggle('christian', this)">🌸 Non-Christian</button>
         </div>
         <input type="hidden" id="f-christian" value="false" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Attends Fellowship 🏛️</label>
+        <div class="toggle-group">
+          <button type="button" class="toggle-btn" data-val="true" onclick="selectToggle('attends', this)">✅ Often</button>
+          <button type="button" class="toggle-btn" data-val="false" onclick="selectToggle('attends', this)">🔸 Not Often</button>
+        </div>
+        <input type="hidden" id="f-attends" value="true" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Contact 📬</label>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:28px;text-align:center">💬</span>
+            <input type="text" id="f-wechat" class="form-control" placeholder="WeChat ID" />
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:28px;text-align:center">📱</span>
+            <input type="text" id="f-whatsapp" class="form-control" placeholder="WhatsApp number" />
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="width:28px;text-align:center">✉️</span>
+            <input type="email" id="f-email" class="form-control" placeholder="Email address" />
+          </div>
+        </div>
       </div>
 
       <div class="divider"></div>
@@ -244,7 +271,7 @@
   let deleteId = null;
 
   // Toggle button selection
-  const toggleState = { gender: 'other', christian: 'false' };
+  const toggleState = { gender: 'male', christian: 'false', attends: 'true' };
 
   function selectToggle(group, btn) {
     const parent = btn.closest('.toggle-group');
@@ -309,6 +336,15 @@
           <td>${age !== null ? `<span class="badge badge-green">🎂 ${age + (days === 0 ? 0 : 1)}</span>` : '<span style="color:var(--text-light)">—</span>'}</td>
           <td><span class="badge ${cls}">${text}</span></td>
           <td><span class="badge ${b.christian ? 'badge-purple' : 'badge-yellow'}">${b.christian ? '✝️ Christian' : '🌸 Non-Christian'}</span></td>
+          <td><span class="badge ${b.attends !== false ? 'badge-green' : 'badge-red'}">${b.attends !== false ? '✅ Often' : '🔸 Not Often'}</span></td>
+          <td>
+            <div style="display:flex;flex-direction:column;gap:3px;font-size:0.8rem">
+              ${b.contact?.wechat   ? `<span>💬 ${b.contact.wechat}</span>`   : ''}
+              ${b.contact?.whatsapp ? `<span>📱 ${b.contact.whatsapp}</span>` : ''}
+              ${b.contact?.email    ? `<span>✉️ ${b.contact.email}</span>`    : ''}
+              ${!b.contact?.wechat && !b.contact?.whatsapp && !b.contact?.email ? '<span style="color:var(--text-light)">—</span>' : ''}
+            </div>
+          </td>
           <td style="text-align:right">
             <button class="btn btn-ghost btn-sm" onclick="editBirthday('${b.id}')">✏️ Edit</button>
             <button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger)" onclick="deleteBirthday('${b.id}','${b.name.replace(/'/g,"\\'")}')">🗑️</button>
@@ -346,9 +382,13 @@
     document.getElementById('f-month').value = now.getMonth() + 1;
     document.getElementById('f-day').value = now.getDate();
 
-    // Reset toggles
-    setToggle('gender', 'other');
+    // Reset toggles and contact fields
+    setToggle('gender', 'male');
     setToggle('christian', 'false');
+    setToggle('attends', 'true');
+    document.getElementById('f-wechat').value = '';
+    document.getElementById('f-whatsapp').value = '';
+    document.getElementById('f-email').value = '';
 
     openModal('birthday-modal');
   }
@@ -366,8 +406,12 @@
     document.getElementById('f-year').value = b.year || '';
     document.getElementById('save-btn').textContent = '💾 Update Birthday';
 
-    setToggle('gender', b.gender || 'other');
+    setToggle('gender', b.gender || 'male');
     setToggle('christian', String(b.christian));
+    setToggle('attends', String(b.attends !== false));
+    document.getElementById('f-wechat').value   = b.contact?.wechat   || '';
+    document.getElementById('f-whatsapp').value = b.contact?.whatsapp || '';
+    document.getElementById('f-email').value    = b.contact?.email    || '';
 
     openModal('birthday-modal');
   }
@@ -392,8 +436,14 @@
       month: parseInt(document.getElementById('f-month').value),
       day: parseInt(document.getElementById('f-day').value),
       year: parseInt(document.getElementById('f-year').value) || null,
-      gender: document.getElementById('f-gender').value || 'other',
+      gender: document.getElementById('f-gender').value || 'male',
       christian: document.getElementById('f-christian').value === 'true',
+      attends: document.getElementById('f-attends').value === 'true',
+      contact: {
+        wechat:   document.getElementById('f-wechat').value.trim() || null,
+        whatsapp: document.getElementById('f-whatsapp').value.trim() || null,
+        email:    document.getElementById('f-email').value.trim() || null,
+      },
     };
 
     try {
