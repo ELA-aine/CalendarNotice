@@ -439,7 +439,7 @@
           <td>${age !== null ? `<span class="badge badge-green">🎂 ${birthdayPassed ? age : age - 1}</span>` : '<span style="color:var(--text-light)">—</span>'}</td>
           <td><span class="badge ${cls}">${text}</span></td>
           <td><span class="badge ${b.christian ? 'badge-purple' : 'badge-yellow'}">${b.christian ? '✝️ Christian' : '🌸 Non-Christian'}</span></td>
-          <td style="text-align:center">${b.attends !== false ? '✅' : '🔸'}</td>
+          <td style="text-align:center">${b.attends !== false ? '🟢' : '🟠'}</td>
           <td>
             <div style="display:flex;gap:4px;align-items:center">
               ${b.contact?.wechat   ? `<button class="contact-icon" onclick="showContact(event,'${b.id}','wechat')"   title="WeChat">💬</button>`   : ''}
