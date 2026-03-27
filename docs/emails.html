@@ -461,9 +461,9 @@
 
     // Populate the picker with all emails
     const list = document.getElementById('test-email-list');
-    list.innerHTML = allEmails.map((e, i) => `
+    list.innerHTML = allEmails.map((e) => `
       <label style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);cursor:pointer;background:white">
-        <input type="radio" name="test-recipient" value="${e.email}" ${i === 0 ? 'checked' : ''} style="accent-color:var(--primary);width:16px;height:16px;flex-shrink:0" />
+        <input type="checkbox" class="test-recipient-cb" value="${e.email}" ${e.active !== false ? 'checked' : ''} style="accent-color:var(--primary);width:16px;height:16px;flex-shrink:0" />
         <div>
           <div style="font-weight:700;font-size:0.92rem">${e.name || e.email}</div>
           ${e.name ? `<div style="font-size:0.78rem;color:var(--text-light)">${e.email}</div>` : ''}
@@ -476,10 +476,10 @@
   }
 
   async function confirmSendTest() {
-    const selected = document.querySelector('input[name="test-recipient"]:checked');
-    if (!selected) { toast('Please select a recipient.', 'warning'); return; }
+    const checked = [...document.querySelectorAll('.test-recipient-cb:checked')];
+    if (!checked.length) { toast('Please select at least one recipient.', 'warning'); return; }
 
-    const recipient = selected.value;
+    const recipient = checked.map(cb => cb.value).join(', ');
     closeModal('test-email-modal');
 
     const btn = document.getElementById('test-btn');
