@@ -432,7 +432,7 @@
           <td>
             <div style="display:flex;align-items:center;gap:10px">
               <div style="width:36px;height:36px;border-radius:50%;background:${avatarBg(b.gender)};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${genderEmoji(b.gender)}</div>
-              <div style="font-weight:800">${b.name}</div>
+              <div style="font-weight:800;color:${b.gender==='female'?'#EC4899':b.gender==='male'?'#3B82F6':'var(--text)'}">${b.name}</div>
             </div>
           </td>
           <td><span style="font-weight:700">${formatDate(b.year, b.month, b.day)}</span></td>
