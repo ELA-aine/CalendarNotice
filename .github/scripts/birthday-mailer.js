@@ -78,10 +78,10 @@ function buildEmailHtml(upcoming) {
   <div style="max-width:560px;margin:0 auto">
 
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#FF6B9D,#C084FC);border-radius:18px 18px 0 0;padding:28px 32px;text-align:center">
-      <div style="font-size:2.5rem">🎂</div>
-      <h1 style="color:white;margin:8px 0 4px;font-size:1.5rem">Birthday Reminder!</h1>
-      <p style="color:rgba(255,255,255,0.85);margin:0;font-size:0.9rem">${todayLabel}</p>
+    <div style="background:linear-gradient(135deg,#E8528A,#9333EA);border-radius:18px 18px 0 0;padding:32px 32px;text-align:center">
+      <div style="font-size:3rem;margin-bottom:10px">🎂</div>
+      <h1 style="color:white;margin:0 0 8px;font-size:1.8rem;font-weight:900;letter-spacing:-0.02em">Birthday Reminder!</h1>
+      <p style="color:white;margin:0;font-size:0.92rem;font-weight:600;background:rgba(0,0,0,0.18);display:inline-block;padding:4px 14px;border-radius:999px">${todayLabel}</p>
     </div>
 
     <!-- Body -->
@@ -128,10 +128,10 @@ function buildTestEmailHtml() {
 <head><meta charset="UTF-8"/></head>
 <body style="font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF0F8;margin:0;padding:20px">
   <div style="max-width:560px;margin:0 auto">
-    <div style="background:linear-gradient(135deg,#FF6B9D,#C084FC);border-radius:18px 18px 0 0;padding:28px 32px;text-align:center">
-      <div style="font-size:2.5rem">🎉</div>
-      <h1 style="color:white;margin:8px 0 4px;font-size:1.5rem">Test Email — It works!</h1>
-      <p style="color:rgba(255,255,255,0.85);margin:0;font-size:0.9rem">${todayLabel}</p>
+    <div style="background:linear-gradient(135deg,#E8528A,#9333EA);border-radius:18px 18px 0 0;padding:32px 32px;text-align:center">
+      <div style="font-size:3rem;margin-bottom:10px">🎉</div>
+      <h1 style="color:white;margin:0 0 8px;font-size:1.8rem;font-weight:900;letter-spacing:-0.02em">Test Email — It works!</h1>
+      <p style="color:white;margin:0;font-size:0.92rem;font-weight:600;background:rgba(0,0,0,0.18);display:inline-block;padding:4px 14px;border-radius:999px">${todayLabel}</p>
     </div>
     <div style="background:white;border-radius:0 0 18px 18px;padding:28px 32px;border:1.5px solid #FFE4F0;border-top:none">
       <p style="color:#374151;font-size:0.95rem;margin:0 0 16px">
@@ -171,10 +171,11 @@ async function main() {
     process.exit(1);
   }
 
-  const birthdays = JSON.parse(fs.readFileSync(birthdaysPath, 'utf8'));
-  const emails    = JSON.parse(fs.readFileSync(emailsPath, 'utf8'));
+  const birthdays  = JSON.parse(fs.readFileSync(birthdaysPath, 'utf8'));
+  const allEmails  = JSON.parse(fs.readFileSync(emailsPath, 'utf8'));
+  const emails     = allEmails.filter(e => e.active !== false);
 
-  console.log(`   Loaded ${birthdays.length} birthdays, ${emails.length} email recipients`);
+  console.log(`   Loaded ${birthdays.length} birthdays, ${emails.length} active recipients (${allEmails.length} total)`);
 
   if (!emails.length) {
     console.log('ℹ️  No email recipients configured. Exiting.');
@@ -190,6 +191,7 @@ async function main() {
     }
     const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: GMAIL_USER, pass: GMAIL_PASS } });
     const toList = emails.map(e => e.email).join(', ');
+    if (!toList) { console.log('ℹ️  No active recipients. Exiting.'); return; }
     const info = await transporter.sendMail({
       from: `"🎂 Joshua Fellowship Birthday Calendar" <${GMAIL_USER}>`,
       to: toList,

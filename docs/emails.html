@@ -58,11 +58,11 @@
   <!-- Info card -->
   <div class="card mb-3" style="background:var(--accent-light);border-color:var(--accent);padding:16px 20px">
     <div style="display:flex;align-items:flex-start;gap:12px">
-      <span style="font-size:1.4rem">💡</span>
+      <span style="font-size:1.4rem">💌</span>
       <div>
-        <div style="font-weight:800;margin-bottom:4px">How it works</div>
+        <div style="font-weight:800;margin-bottom:4px">Internal Fellowship Notifications</div>
         <div style="font-size:0.88rem;color:var(--text-muted)">
-          A GitHub Actions workflow runs every day at <strong>8:00 AM UTC</strong>. It checks for upcoming birthdays (today &amp; next 3 days) and sends a warm birthday email to everyone on this list. Christian birthdays get a faith-based greeting 🙏
+          Birthday emails are sent <strong>internally</strong> to those who currently serve in fellowship. Remember to send a warm birthday message to care for our fellow brothers and sisters! 🙏 If someone is temporarily not serving, <strong>deactivate</strong> their email — they'll be skipped until you activate them again.
         </div>
       </div>
     </div>
@@ -74,9 +74,16 @@
     <button class="btn btn-ghost btn-sm" onclick="loadEmails()">🔄 Refresh</button>
   </div>
 
-  <!-- Email list -->
-  <div class="email-grid" id="email-grid">
-    <div style="text-align:center;padding:32px;color:var(--text-light)">Loading... 📧</div>
+  <!-- Active emails -->
+  <div id="section-active" style="display:none;margin-bottom:24px">
+    <div style="font-weight:900;font-size:0.88rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">▶ Active</div>
+    <div class="email-grid" id="grid-active"></div>
+  </div>
+
+  <!-- Inactive emails -->
+  <div id="section-inactive" style="display:none;margin-bottom:24px">
+    <div style="font-weight:900;font-size:0.88rem;color:var(--text-light);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">⏸ Inactive</div>
+    <div class="email-grid" id="grid-inactive"></div>
   </div>
 
   <div class="empty-state" id="empty-state" style="display:none">
@@ -194,37 +201,55 @@
   }
 
   function renderEmails() {
-    const grid = document.getElementById('email-grid');
     const empty = document.getElementById('empty-state');
     const count = document.getElementById('email-count');
 
-    count.textContent = `${allEmails.length} ${allEmails.length === 1 ? 'recipient' : 'recipients'}`;
+    const active   = allEmails.filter(e => e.active !== false);
+    const inactive = allEmails.filter(e => e.active === false);
+
+    count.textContent = `${active.length} active · ${allEmails.length} total`;
 
     if (!allEmails.length) {
-      grid.innerHTML = '';
-      grid.style.display = 'none';
+      document.getElementById('section-active').style.display = 'none';
+      document.getElementById('section-inactive').style.display = 'none';
       empty.style.display = 'block';
       return;
     }
 
-    grid.style.display = 'flex';
     empty.style.display = 'none';
 
-    grid.innerHTML = allEmails.map(e => `
-      <div class="email-card">
-        <div class="email-avatar">📧</div>
-        <div style="flex:1;min-width:0">
-          ${e.name  ? `<div style="font-weight:800;font-size:0.95rem">${e.name}</div>` : ''}
-          <div class="email-address">${e.email}</div>
-          ${e.label ? `<div class="email-added">🏷️ ${e.label}</div>` : ''}
-          <div class="email-added">Added ${e.addedAt ? new Date(e.addedAt).toLocaleDateString() : 'recently'}</div>
+    const cardHtml = (e, isActive) => `
+      <div class="email-card" style="${isActive ? '' : 'background:#F9FAFB'}">
+        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;${isActive ? '' : 'opacity:0.5'}">
+          <div class="email-avatar" style="${isActive ? '' : 'background:var(--bg)'}">📧</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
+              ${e.name ? `<span style="font-weight:900;font-size:0.95rem;color:${isActive ? 'var(--primary)' : 'var(--text-muted)'};white-space:nowrap">${e.name}</span><span style="color:var(--text-light);font-size:0.85rem">·</span>` : ''}
+              <span class="email-address" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${isActive ? '' : 'var(--text-muted)'}">${e.email}</span>
+            </div>
+            ${e.label ? `<div class="email-added">🏷️ ${e.label}</div>` : ''}
+            <div class="email-added">Added ${e.addedAt ? new Date(e.addedAt).toLocaleDateString() : 'recently'}</div>
+          </div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn btn-ghost btn-sm" onclick="editEmail('${e.id}')">✏️ Edit</button>
+          ${isActive
+            ? `<button class="btn btn-ghost btn-sm" onclick="toggleActive('${e.id}', false)">⏸ Deactivate</button>`
+            : `<button class="btn btn-primary btn-sm" onclick="toggleActive('${e.id}', true)">▶ Activate</button>`
+          }
+          <button class="btn btn-ghost btn-sm" onclick="editEmail('${e.id}')">✏️</button>
           <button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger)" onclick="removeEmail('${e.id}','${e.email.replace(/'/g,"\\'")}')">🗑️</button>
         </div>
       </div>
-    `).join('');
+    `;
+
+    const sectionActive = document.getElementById('section-active');
+    const sectionInactive = document.getElementById('section-inactive');
+
+    sectionActive.style.display = active.length ? 'block' : 'none';
+    document.getElementById('grid-active').innerHTML = active.map(e => cardHtml(e, true)).join('');
+
+    sectionInactive.style.display = inactive.length ? 'block' : 'none';
+    document.getElementById('grid-inactive').innerHTML = inactive.map(e => cardHtml(e, false)).join('');
   }
 
   function editEmail(id) {
@@ -324,6 +349,19 @@
       toast('Remove failed: ' + err.message, 'error');
     }
     removeId = null;
+  }
+
+  async function toggleActive(id, active) {
+    try {
+      const list = allEmails.map(e => e.id === id ? { ...e, active } : e);
+      await API.saveEmails(list);
+      allEmails = list;
+      renderEmails();
+      toast(active ? '▶ Email activated!' : '⏸ Email deactivated!');
+      notifyDeploying();
+    } catch (err) {
+      toast('Failed: ' + err.message, 'error');
+    }
   }
 
   let bulkEmailCount = 0;
