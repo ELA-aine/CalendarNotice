@@ -128,21 +128,21 @@ function buildTestEmailHtml() {
 <head><meta charset="UTF-8"/></head>
 <body style="font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF0F8;margin:0;padding:20px">
   <div style="max-width:560px;margin:0 auto">
-    <div style="background:linear-gradient(135deg,#E8528A,#9333EA);border-radius:18px 18px 0 0;padding:32px 32px;text-align:center">
+    <div style="background:linear-gradient(135deg,#BE185D,#7E22CE);border-radius:18px 18px 0 0;padding:32px 32px;text-align:center">
       <div style="font-size:3rem;margin-bottom:10px">🎉</div>
-      <h1 style="color:white;margin:0 0 8px;font-size:1.8rem;font-weight:900;letter-spacing:-0.02em">Test Email — It works!</h1>
-      <p style="color:white;margin:0;font-size:0.92rem;font-weight:600;background:rgba(0,0,0,0.18);display:inline-block;padding:4px 14px;border-radius:999px">${todayLabel}</p>
+      <h1 style="color:#FFFFFF;margin:0 0 8px;font-size:2rem;font-weight:900;letter-spacing:-0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.45)">Test Email — It works!</h1>
+      <p style="color:#FFFFFF;margin:0;font-size:0.92rem;font-weight:600;background:rgba(0,0,0,0.30);display:inline-block;padding:4px 14px;border-radius:999px">${todayLabel}</p>
     </div>
-    <div style="background:white;border-radius:0 0 18px 18px;padding:28px 32px;border:1.5px solid #FFE4F0;border-top:none">
+    <div style="background:white;border-radius:0 0 18px 18px;padding:28px 32px;border:2px solid #D946EF;border-top:none">
       <p style="color:#374151;font-size:0.95rem;margin:0 0 16px">
         ✅ Your <strong>Joshua Fellowship Birthday Calendar</strong> email setup is working correctly!
       </p>
       <p style="color:#6B7280;font-size:0.88rem;margin:0 0 16px">
         This test email was triggered manually from the app. Real birthday notifications will be sent automatically every day at <strong>8:00 AM UTC</strong> when birthdays are coming up.
       </p>
-      <div style="background:#FFF5FB;border:1.5px solid #FFE4F0;border-radius:12px;padding:16px 20px;margin-bottom:16px">
-        <div style="font-weight:700;color:#374151;margin-bottom:6px">🎂 Sample Birthday</div>
-        <div style="color:#6B7280;font-size:0.88rem">Jane Doe — March 26 — 🎉 Today!</div>
+      <div style="background:#F3E8FF;border:2px solid #A855F7;border-radius:12px;padding:16px 20px;margin-bottom:16px">
+        <div style="font-weight:700;color:#1F2937;margin-bottom:6px">🎂 Sample Birthday</div>
+        <div style="color:#4B5563;font-size:0.88rem">Jane Doe — March 26 — 🎉 Today!</div>
         <div style="color:#7C3AED;font-size:0.88rem;margin-top:6px">✝️ May God bless Jane Doe abundantly on this special day! 🙏</div>
       </div>
       <div style="text-align:center;margin-top:24px;padding-top:20px;border-top:1px solid #FFE4F0">
