@@ -96,9 +96,12 @@
     </div>
     <form onsubmit="saveEmail(event)">
       <div class="form-group">
+        <label class="form-label">Name 👤</label>
+        <input type="text" id="new-name" class="form-control" placeholder="Full name" />
+      </div>
+      <div class="form-group">
         <label class="form-label">Email Address ✉️</label>
         <input type="email" id="new-email" class="form-control" placeholder="someone@example.com" required />
-        <div class="form-hint">This address will receive birthday notification emails</div>
       </div>
       <div class="form-group">
         <label class="form-label">Label (optional) 🏷️</label>
@@ -139,12 +142,16 @@
     <form onsubmit="saveEditEmail(event)">
       <input type="hidden" id="edit-email-id" />
       <div class="form-group">
-        <label class="form-label">Name 🏷️</label>
-        <input type="text" id="edit-email-name" class="form-control" placeholder="e.g. Work team, Family" />
+        <label class="form-label">Name 👤</label>
+        <input type="text" id="edit-email-name" class="form-control" placeholder="Full name" />
       </div>
       <div class="form-group">
         <label class="form-label">Email Address ✉️</label>
         <input type="email" id="edit-email-addr" class="form-control" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Label (optional) 🏷️</label>
+        <input type="text" id="edit-email-label" class="form-control" placeholder="e.g. Work team, Family" />
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
         <button type="button" class="btn btn-ghost" onclick="closeModal('edit-email-modal')">Cancel</button>
@@ -207,8 +214,9 @@
       <div class="email-card">
         <div class="email-avatar">📧</div>
         <div style="flex:1;min-width:0">
+          ${e.name  ? `<div style="font-weight:800;font-size:0.95rem">${e.name}</div>` : ''}
           <div class="email-address">${e.email}</div>
-          ${e.label ? `<div class="email-added">${e.label}</div>` : ''}
+          ${e.label ? `<div class="email-added">🏷️ ${e.label}</div>` : ''}
           <div class="email-added">Added ${e.addedAt ? new Date(e.addedAt).toLocaleDateString() : 'recently'}</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
@@ -222,9 +230,10 @@
   function editEmail(id) {
     const e = allEmails.find(x => x.id === id);
     if (!e) return;
-    document.getElementById('edit-email-id').value   = e.id;
-    document.getElementById('edit-email-name').value = e.label || '';
-    document.getElementById('edit-email-addr').value = e.email;
+    document.getElementById('edit-email-id').value    = e.id;
+    document.getElementById('edit-email-name').value  = e.name  || '';
+    document.getElementById('edit-email-addr').value  = e.email || '';
+    document.getElementById('edit-email-label').value = e.label || '';
     openModal('edit-email-modal');
   }
 
@@ -234,8 +243,9 @@
     const id    = document.getElementById('edit-email-id').value;
     const name  = document.getElementById('edit-email-name').value.trim();
     const email = document.getElementById('edit-email-addr').value.trim().toLowerCase();
+    const label = document.getElementById('edit-email-label').value.trim();
     try {
-      const list = allEmails.map(e => e.id === id ? { ...e, email, label: name || null } : e);
+      const list = allEmails.map(e => e.id === id ? { ...e, name: name || null, email, label: label || null } : e);
       await API.saveEmails(list);
       allEmails = list;
       renderEmails();
@@ -247,6 +257,7 @@
   }
 
   function openAddModal() {
+    document.getElementById('new-name').value  = '';
     document.getElementById('new-email').value = '';
     document.getElementById('new-label').value = '';
     openModal('email-modal');
@@ -260,6 +271,7 @@
       return;
     }
 
+    const name  = document.getElementById('new-name').value.trim();
     const email = document.getElementById('new-email').value.trim();
     const label = document.getElementById('new-label').value.trim();
 
@@ -275,6 +287,7 @@
     try {
       const list = [...allEmails, {
         id: generateId(),
+        name: name || null,
         email,
         label: label || null,
         addedAt: new Date().toISOString(),
@@ -330,8 +343,9 @@
     row.style.cssText = 'display:flex;gap:8px;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px';
     row.innerHTML = `
       <div style="flex:1;display:flex;flex-direction:column;gap:6px">
-        <input type="text" class="form-control be-name" placeholder="Name" style="padding:8px 12px;font-size:0.9rem" />
-        <input type="email" class="form-control be-email" placeholder="Email address" style="padding:8px 12px;font-size:0.9rem" />
+        <input type="text"  class="form-control be-name"  placeholder="Name"             style="padding:8px 12px;font-size:0.9rem" />
+        <input type="email" class="form-control be-email" placeholder="Email address"    style="padding:8px 12px;font-size:0.9rem" />
+        <input type="text"  class="form-control be-label" placeholder="Label (optional)" style="padding:8px 12px;font-size:0.9rem" />
       </div>
       <button type="button" onclick="removeBulkEmailRow(${id})"
         style="background:var(--danger-light);color:var(--danger);border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:0.8rem;flex-shrink:0">✕</button>
@@ -352,9 +366,10 @@
     for (const row of rows) {
       const name  = row.querySelector('.be-name').value.trim();
       const email = row.querySelector('.be-email').value.trim().toLowerCase();
+      const label = row.querySelector('.be-label').value.trim();
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) continue;
-      if (allEmails.some(x => x.email.toLowerCase() === email)) continue; // skip dups
-      toAdd.push({ id: generateId(), email, label: name || null, addedAt: new Date().toISOString() });
+      if (allEmails.some(x => x.email.toLowerCase() === email)) continue;
+      toAdd.push({ id: generateId(), name: name || null, email, label: label || null, addedAt: new Date().toISOString() });
     }
 
     if (!toAdd.length) { toast('No new valid emails found.', 'warning'); return; }
