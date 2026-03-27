@@ -56,6 +56,13 @@
     </div>
   </div>
 
+  <!-- Bulk delete bar (hidden until rows selected) -->
+  <div id="bulk-delete-bar" style="display:none;background:var(--danger-light);border:1.5px solid var(--danger);border-radius:var(--radius-sm);padding:12px 18px;margin-bottom:14px;display:none;align-items:center;gap:12px">
+    <span id="bulk-delete-count" style="font-weight:800;color:#DC2626;font-size:0.92rem"></span>
+    <button class="btn btn-danger btn-sm" onclick="confirmBulkDelete()">🗑️ Delete Selected</button>
+    <button class="btn btn-ghost btn-sm" onclick="clearSelection()">✕ Cancel</button>
+  </div>
+
   <!-- Search & filter -->
   <div class="card mb-3" style="padding:16px 20px">
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
@@ -90,6 +97,7 @@
       <table class="table-cute">
         <thead>
           <tr>
+            <th style="width:36px"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" style="cursor:pointer;width:16px;height:16px;accent-color:var(--primary)" /></th>
             <th>Person</th>
             <th>Birthday</th>
             <th>Age</th>
@@ -371,6 +379,7 @@
       const age = getAge(b.year);
       return `
         <tr>
+          <td><input type="checkbox" class="row-checkbox" data-id="${b.id}" onchange="onRowCheck()" style="cursor:pointer;width:16px;height:16px;accent-color:var(--primary)" /></td>
           <td>
             <div style="display:flex;align-items:center;gap:10px">
               <div style="width:36px;height:36px;border-radius:50%;background:${avatarBg(b.gender)};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${genderEmoji(b.gender)}</div>
@@ -537,6 +546,50 @@
   }
 
   loadBirthdays();
+
+  // ── Multi-select & bulk delete ────────────────────────────────────────
+  function getSelectedIds() {
+    return [...document.querySelectorAll('.row-checkbox:checked')].map(c => c.dataset.id);
+  }
+
+  function onRowCheck() {
+    const ids   = getSelectedIds();
+    const bar   = document.getElementById('bulk-delete-bar');
+    const all   = document.getElementById('select-all');
+    const total = document.querySelectorAll('.row-checkbox').length;
+    bar.style.display = ids.length ? 'flex' : 'none';
+    document.getElementById('bulk-delete-count').textContent = `${ids.length} selected`;
+    all.indeterminate = ids.length > 0 && ids.length < total;
+    all.checked = ids.length === total && total > 0;
+  }
+
+  function toggleSelectAll(cb) {
+    document.querySelectorAll('.row-checkbox').forEach(c => c.checked = cb.checked);
+    onRowCheck();
+  }
+
+  function clearSelection() {
+    document.querySelectorAll('.row-checkbox').forEach(c => c.checked = false);
+    document.getElementById('select-all').checked = false;
+    onRowCheck();
+  }
+
+  async function confirmBulkDelete() {
+    const ids = getSelectedIds();
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} birthday${ids.length > 1 ? 's' : ''}? This cannot be undone.`)) return;
+    try {
+      const list = allBirthdays.filter(b => !ids.includes(b.id));
+      await API.saveBirthdays(list);
+      allBirthdays = list;
+      renderTable(allBirthdays);
+      document.getElementById('bulk-delete-bar').style.display = 'none';
+      document.getElementById('select-all').checked = false;
+      toast(`Deleted ${ids.length} birthday${ids.length > 1 ? 's' : ''} 🗑️`);
+    } catch (err) {
+      toast('Delete failed: ' + err.message, 'error');
+    }
+  }
 
   // ── Contact popover ───────────────────────────────────────────────────
   const CONTACT_LABELS = { wechat: '💬 WeChat', whatsapp: '📱 WhatsApp', email: '✉️ Email' };
