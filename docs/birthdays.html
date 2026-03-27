@@ -237,38 +237,16 @@
 
 <!-- Bulk add birthdays modal -->
 <div class="modal-overlay" id="bulk-birthday-modal">
-  <div class="modal" style="max-width:560px">
+  <div class="modal" style="max-width:540px">
     <div class="modal-header">
-      <h2>📋 Add Birthday List</h2>
+      <h2>📋 Add Multiple Birthdays</h2>
       <button class="modal-close" onclick="closeModal('bulk-birthday-modal')">✕</button>
     </div>
-
-    <div id="bulk-bday-step1">
-      <div class="form-group">
-        <label class="form-label">Paste birthdays ✨</label>
-        <textarea id="bulk-bday-input" class="form-control" rows="9"
-          placeholder="One birthday per line:&#10;Name, Month, Day&#10;Name, Month, Day, Year&#10;&#10;Examples:&#10;Alice, 3, 26&#10;Bob, 11, 7, 1995&#10;Carol, 7, 4"
-          style="resize:vertical;font-family:monospace;font-size:0.88rem"></textarea>
-        <div class="form-hint">Format: <strong>Name, Month (1-12), Day</strong> — year is optional. Gender and faith can be set after import.</div>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button class="btn btn-ghost" onclick="closeModal('bulk-birthday-modal')">Cancel</button>
-        <button class="btn btn-primary" onclick="parseBulkBirthdays()">Preview →</button>
-      </div>
-    </div>
-
-    <div id="bulk-bday-step2" style="display:none">
-      <div id="bulk-bday-summary" style="margin-bottom:12px"></div>
-      <div style="max-height:280px;overflow-y:auto;border:1.5px solid var(--border);border-radius:var(--radius-sm)">
-        <table class="table-cute">
-          <thead><tr><th>Name</th><th>Month</th><th>Day</th><th>Year</th><th>Status</th></tr></thead>
-          <tbody id="bulk-bday-preview"></tbody>
-        </table>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
-        <button class="btn btn-ghost" onclick="resetBulkBirthday()">← Back</button>
-        <button class="btn btn-primary" id="bulk-bday-confirm-btn" onclick="confirmBulkBirthdays()">✅ Add All</button>
-      </div>
+    <div id="bulk-bday-rows" style="display:flex;flex-direction:column;gap:14px;max-height:60vh;overflow-y:auto;padding-right:4px"></div>
+    <button class="btn btn-ghost" style="width:100%;margin-top:14px;border-style:dashed" onclick="addBulkRow()">＋ Add Another Person</button>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-ghost" onclick="closeModal('bulk-birthday-modal')">Cancel</button>
+      <button class="btn btn-primary" id="bulk-bday-save-btn" onclick="saveBulkBirthdays()">💾 Save All</button>
     </div>
   </div>
 </div>
@@ -591,82 +569,126 @@
   });
 
   // ── Bulk Birthday Add ─────────────────────────────────────────────────
-  let bulkParsed = [];
+  let bulkRowCount = 0;
 
   function openBulkBirthdayModal() {
-    resetBulkBirthday();
+    bulkRowCount = 0;
+    document.getElementById('bulk-bday-rows').innerHTML = '';
+    addBulkRow();
     openModal('bulk-birthday-modal');
   }
 
-  function resetBulkBirthday() {
-    bulkParsed = [];
-    document.getElementById('bulk-bday-input').value = '';
-    document.getElementById('bulk-bday-step1').style.display = 'block';
-    document.getElementById('bulk-bday-step2').style.display = 'none';
+  function addBulkRow() {
+    const id = bulkRowCount++;
+    const now = new Date();
+    const container = document.getElementById('bulk-bday-rows');
+    const row = document.createElement('div');
+    row.id = `bulk-row-${id}`;
+    row.style.cssText = 'background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;position:relative';
+    row.innerHTML = `
+      <button type="button" onclick="removeBulkRow(${id})" title="Remove"
+        style="position:absolute;top:10px;right:10px;background:var(--danger-light);color:var(--danger);border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:0.8rem;display:flex;align-items:center;justify-content:center">✕</button>
+
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label" style="font-size:0.82rem">Name ✨</label>
+        <input type="text" class="form-control br-name" placeholder="Full name" required style="padding:9px 12px" />
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <label class="form-label" style="font-size:0.82rem">Month</label>
+          <select class="form-control br-month" style="padding:9px 10px">
+            ${['January','February','March','April','May','June','July','August','September','October','November','December']
+              .map((m,i) => `<option value="${i+1}" ${i+1 === now.getMonth()+1 ? 'selected' : ''}>${m}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="form-label" style="font-size:0.82rem">Day</label>
+          <input type="number" class="form-control br-day" placeholder="Day" min="1" max="31" value="${now.getDate()}" style="padding:9px 12px" />
+        </div>
+        <div>
+          <label class="form-label" style="font-size:0.82rem">Year <span style="font-weight:400;color:var(--text-light)">(opt)</span></label>
+          <input type="number" class="form-control br-year" placeholder="e.g. 1995" min="1900" max="2025" style="padding:9px 12px" />
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div>
+          <label class="form-label" style="font-size:0.82rem">Gender</label>
+          <div style="display:flex;gap:4px">
+            <button type="button" class="toggle-btn br-gender active" data-val="male"
+              style="padding:7px 8px;font-size:0.8rem"
+              onclick="setBulkToggle(this,'br-gender')">👦 M</button>
+            <button type="button" class="toggle-btn br-gender"  data-val="female"
+              style="padding:7px 8px;font-size:0.8rem"
+              onclick="setBulkToggle(this,'br-gender')">👧 F</button>
+          </div>
+        </div>
+        <div>
+          <label class="form-label" style="font-size:0.82rem">Faith</label>
+          <div style="display:flex;gap:4px">
+            <button type="button" class="toggle-btn br-christian" data-val="true"
+              style="padding:7px 8px;font-size:0.8rem"
+              onclick="setBulkToggle(this,'br-christian')">✝️</button>
+            <button type="button" class="toggle-btn br-christian active" data-val="false"
+              style="padding:7px 8px;font-size:0.8rem"
+              onclick="setBulkToggle(this,'br-christian')">🌸</button>
+          </div>
+        </div>
+        <div>
+          <label class="form-label" style="font-size:0.82rem">Fellowship</label>
+          <div style="display:flex;gap:4px">
+            <button type="button" class="toggle-btn br-attends active" data-val="true"
+              style="padding:7px 8px;font-size:0.8rem"
+              onclick="setBulkToggle(this,'br-attends')">✅</button>
+            <button type="button" class="toggle-btn br-attends" data-val="false"
+              style="padding:7px 8px;font-size:0.8rem"
+              onclick="setBulkToggle(this,'br-attends')">🔸</button>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(row);
+    row.querySelector('.br-name').focus();
   }
 
-  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  function parseBulkBirthdays() {
-    const raw = document.getElementById('bulk-bday-input').value.trim();
-    if (!raw) { toast('Please enter some birthdays first.', 'warning'); return; }
-
-    bulkParsed = [];
-    const lines = raw.split(/\r?\n/).filter(l => l.trim());
-
-    lines.forEach((line, i) => {
-      const parts = line.split(',').map(p => p.trim());
-      const name  = parts[0];
-      const month = parseInt(parts[1]);
-      const day   = parseInt(parts[2]);
-      const year  = parseInt(parts[3]) || null;
-
-      if (!name) return;
-      if (!month || month < 1 || month > 12 || !day || day < 1 || day > 31) {
-        bulkParsed.push({ _error: `Line ${i+1}: invalid month/day`, name: parts[0] || '?' });
-        return;
-      }
-
-      const isDup = allBirthdays.some(b => b.name.toLowerCase() === name.toLowerCase() && b.month === month && b.day === day);
-      bulkParsed.push({ id: generateId(), name, month, day, year, gender: 'male', christian: false, attends: true, contact: {}, _dup: isDup });
-    });
-
-    const valid  = bulkParsed.filter(r => !r._error && !r._dup);
-    const dups   = bulkParsed.filter(r => r._dup);
-    const errors = bulkParsed.filter(r => r._error);
-
-    document.getElementById('bulk-bday-summary').innerHTML = `
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <span class="badge badge-green">✅ ${valid.length} new</span>
-        ${dups.length   ? `<span class="badge badge-yellow">⚠️ ${dups.length} duplicate${dups.length>1?'s':''}</span>` : ''}
-        ${errors.length ? `<span class="badge badge-red">❌ ${errors.length} error${errors.length>1?'s':''}</span>` : ''}
-      </div>`;
-
-    document.getElementById('bulk-bday-confirm-btn').textContent = `✅ Add ${valid.length} Birthdays`;
-    document.getElementById('bulk-bday-confirm-btn').disabled = valid.length === 0;
-
-    document.getElementById('bulk-bday-preview').innerHTML = bulkParsed.map(r => {
-      if (r._error) return `<tr style="opacity:0.5"><td colspan="4">${r.name}</td><td><span class="badge badge-red">error</span></td></tr>`;
-      return `<tr style="${r._dup ? 'opacity:0.5' : ''}">
-        <td><strong>${r.name}</strong></td>
-        <td>${MONTH_NAMES[(r.month||1)-1]}</td>
-        <td>${r.day}</td>
-        <td>${r.year || '—'}</td>
-        <td>${r._dup ? '<span class="badge badge-yellow">duplicate</span>' : '<span class="badge badge-green">new</span>'}</td>
-      </tr>`;
-    }).join('');
-
-    document.getElementById('bulk-bday-step1').style.display = 'none';
-    document.getElementById('bulk-bday-step2').style.display = 'block';
+  function removeBulkRow(id) {
+    const el = document.getElementById(`bulk-row-${id}`);
+    if (el) el.remove();
   }
 
-  async function confirmBulkBirthdays() {
+  function setBulkToggle(btn, cls) {
+    const row = btn.closest(`[id^="bulk-row-"]`);
+    row.querySelectorAll(`.${cls}`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function getBulkRowValue(row, cls) {
+    return row.querySelector(`.${cls}.active`)?.dataset.val;
+  }
+
+  async function saveBulkBirthdays() {
     if (!API.isConfigured()) { toast('Configure GitHub settings first! ⚙️', 'warning'); return; }
 
-    const toAdd = bulkParsed.filter(r => !r._error && !r._dup).map(({ _dup, _error, ...b }) => b);
-    if (!toAdd.length) return;
+    const rows = document.querySelectorAll('[id^="bulk-row-"]');
+    const toAdd = [];
 
-    const btn = document.getElementById('bulk-bday-confirm-btn');
+    for (const row of rows) {
+      const name  = row.querySelector('.br-name').value.trim();
+      const month = parseInt(row.querySelector('.br-month').value);
+      const day   = parseInt(row.querySelector('.br-day').value);
+      const year  = parseInt(row.querySelector('.br-year').value) || null;
+      const gender    = getBulkRowValue(row, 'br-gender')    || 'male';
+      const christian = getBulkRowValue(row, 'br-christian') === 'true';
+      const attends   = getBulkRowValue(row, 'br-attends')   !== 'false';
+
+      if (!name || !month || !day) continue;
+      toAdd.push({ id: generateId(), name, month, day, year, gender, christian, attends, contact: {} });
+    }
+
+    if (!toAdd.length) { toast('Fill in at least one name, month and day.', 'warning'); return; }
+
+    const btn = document.getElementById('bulk-bday-save-btn');
     btn.disabled = true;
     btn.textContent = 'Saving...';
 
@@ -679,8 +701,9 @@
       toast(`Added ${toAdd.length} birthday${toAdd.length > 1 ? 's' : ''}! 🎉`);
     } catch (err) {
       toast('Save failed: ' + err.message, 'error');
+    } finally {
       btn.disabled = false;
-      btn.textContent = `✅ Add ${toAdd.length} Birthdays`;
+      btn.textContent = '💾 Save All';
     }
   }
 
