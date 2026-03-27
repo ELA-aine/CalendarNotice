@@ -368,7 +368,9 @@ body {
 
 /* ── CALENDAR OVERRIDES ──────────────────── */
 .fc { font-family: 'Nunito', sans-serif !important; }
-.fc-toolbar-title { font-size: 1.3rem !important; font-weight: 900 !important; color: var(--text) !important; }
+.fc-toolbar-title { font-size: 1.3rem !important; font-weight: 900 !important; color: var(--text) !important; margin: 0 16px !important; }
+.fc-toolbar-chunk { display: flex !important; align-items: center !important; gap: 8px !important; }
+.fc .fc-toolbar { gap: 12px !important; }
 .fc-button-primary {
   background-color: var(--primary) !important;
   border-color: var(--primary) !important;
