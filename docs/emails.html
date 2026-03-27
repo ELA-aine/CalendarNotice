@@ -214,8 +214,10 @@
       <div class="email-card">
         <div class="email-avatar">📧</div>
         <div style="flex:1;min-width:0">
-          ${e.name  ? `<div style="font-weight:800;font-size:0.95rem">${e.name}</div>` : ''}
-          <div class="email-address">${e.email}</div>
+          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:nowrap;overflow:hidden">
+            ${e.name ? `<span style="font-weight:900;font-size:0.95rem;color:var(--primary);white-space:nowrap">${e.name}</span><span style="color:var(--text-light);font-size:0.85rem">·</span>` : ''}
+            <span class="email-address" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.email}</span>
+          </div>
           ${e.label ? `<div class="email-added">🏷️ ${e.label}</div>` : ''}
           <div class="email-added">Added ${e.addedAt ? new Date(e.addedAt).toLocaleDateString() : 'recently'}</div>
         </div>
