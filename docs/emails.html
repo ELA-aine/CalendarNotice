@@ -74,9 +74,16 @@
     <button class="btn btn-ghost btn-sm" onclick="loadEmails()">🔄 Refresh</button>
   </div>
 
-  <!-- Email list -->
-  <div class="email-grid" id="email-grid">
-    <div style="text-align:center;padding:32px;color:var(--text-light)">Loading... 📧</div>
+  <!-- Active emails -->
+  <div id="section-active" style="display:none;margin-bottom:24px">
+    <div style="font-weight:900;font-size:0.88rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">▶ Active</div>
+    <div class="email-grid" id="grid-active"></div>
+  </div>
+
+  <!-- Inactive emails -->
+  <div id="section-inactive" style="display:none;margin-bottom:24px">
+    <div style="font-weight:900;font-size:0.88rem;color:var(--text-light);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">⏸ Inactive</div>
+    <div class="email-grid" id="grid-inactive"></div>
   </div>
 
   <div class="empty-state" id="empty-state" style="display:none">
@@ -194,33 +201,30 @@
   }
 
   function renderEmails() {
-    const grid = document.getElementById('email-grid');
     const empty = document.getElementById('empty-state');
     const count = document.getElementById('email-count');
 
-    const activeCount = allEmails.filter(e => e.active !== false).length;
-    count.textContent = `${activeCount} active · ${allEmails.length} total`;
+    const active   = allEmails.filter(e => e.active !== false);
+    const inactive = allEmails.filter(e => e.active === false);
+
+    count.textContent = `${active.length} active · ${allEmails.length} total`;
 
     if (!allEmails.length) {
-      grid.innerHTML = '';
-      grid.style.display = 'none';
+      document.getElementById('section-active').style.display = 'none';
+      document.getElementById('section-inactive').style.display = 'none';
       empty.style.display = 'block';
       return;
     }
 
-    grid.style.display = 'flex';
     empty.style.display = 'none';
 
-    grid.innerHTML = allEmails.map(e => {
-      const isActive = e.active !== false;
-      return `
-      <div class="email-card" style="${isActive ? '' : 'opacity:0.5;background:#F9FAFB'}">
-        <div class="email-avatar" style="${isActive ? '' : 'background:var(--bg);color:var(--text-light)'}">📧</div>
+    const cardHtml = (e, isActive) => `
+      <div class="email-card" style="${isActive ? '' : 'opacity:0.55;background:#F9FAFB'}">
+        <div class="email-avatar" style="${isActive ? '' : 'background:var(--bg)'}">📧</div>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
             ${e.name ? `<span style="font-weight:900;font-size:0.95rem;color:${isActive ? 'var(--primary)' : 'var(--text-muted)'};white-space:nowrap">${e.name}</span><span style="color:var(--text-light);font-size:0.85rem">·</span>` : ''}
             <span class="email-address" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${isActive ? '' : 'var(--text-muted)'}">${e.email}</span>
-            ${!isActive ? '<span class="badge badge-yellow" style="flex-shrink:0">Inactive</span>' : ''}
           </div>
           ${e.label ? `<div class="email-added">🏷️ ${e.label}</div>` : ''}
           <div class="email-added">Added ${e.addedAt ? new Date(e.addedAt).toLocaleDateString() : 'recently'}</div>
@@ -234,7 +238,16 @@
           <button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger)" onclick="removeEmail('${e.id}','${e.email.replace(/'/g,"\\'")}')">🗑️</button>
         </div>
       </div>
-    `}).join('');
+    `;
+
+    const sectionActive = document.getElementById('section-active');
+    const sectionInactive = document.getElementById('section-inactive');
+
+    sectionActive.style.display = active.length ? 'block' : 'none';
+    document.getElementById('grid-active').innerHTML = active.map(e => cardHtml(e, true)).join('');
+
+    sectionInactive.style.display = inactive.length ? 'block' : 'none';
+    document.getElementById('grid-inactive').innerHTML = inactive.map(e => cardHtml(e, false)).join('');
   }
 
   function editEmail(id) {
