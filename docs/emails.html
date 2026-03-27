@@ -219,20 +219,22 @@
     empty.style.display = 'none';
 
     const cardHtml = (e, isActive) => `
-      <div class="email-card" style="${isActive ? '' : 'opacity:0.55;background:#F9FAFB'}">
-        <div class="email-avatar" style="${isActive ? '' : 'background:var(--bg)'}">📧</div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
-            ${e.name ? `<span style="font-weight:900;font-size:0.95rem;color:${isActive ? 'var(--primary)' : 'var(--text-muted)'};white-space:nowrap">${e.name}</span><span style="color:var(--text-light);font-size:0.85rem">·</span>` : ''}
-            <span class="email-address" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${isActive ? '' : 'var(--text-muted)'}">${e.email}</span>
+      <div class="email-card" style="${isActive ? '' : 'background:#F9FAFB'}">
+        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;${isActive ? '' : 'opacity:0.5'}">
+          <div class="email-avatar" style="${isActive ? '' : 'background:var(--bg)'}">📧</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
+              ${e.name ? `<span style="font-weight:900;font-size:0.95rem;color:${isActive ? 'var(--primary)' : 'var(--text-muted)'};white-space:nowrap">${e.name}</span><span style="color:var(--text-light);font-size:0.85rem">·</span>` : ''}
+              <span class="email-address" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${isActive ? '' : 'var(--text-muted)'}">${e.email}</span>
+            </div>
+            ${e.label ? `<div class="email-added">🏷️ ${e.label}</div>` : ''}
+            <div class="email-added">Added ${e.addedAt ? new Date(e.addedAt).toLocaleDateString() : 'recently'}</div>
           </div>
-          ${e.label ? `<div class="email-added">🏷️ ${e.label}</div>` : ''}
-          <div class="email-added">Added ${e.addedAt ? new Date(e.addedAt).toLocaleDateString() : 'recently'}</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
           ${isActive
             ? `<button class="btn btn-ghost btn-sm" onclick="toggleActive('${e.id}', false)">⏸ Deactivate</button>`
-            : `<button class="btn btn-sm" style="background:var(--success-light);color:var(--success)" onclick="toggleActive('${e.id}', true)">▶ Activate</button>`
+            : `<button class="btn btn-primary btn-sm" onclick="toggleActive('${e.id}', true)">▶ Activate</button>`
           }
           <button class="btn btn-ghost btn-sm" onclick="editEmail('${e.id}')">✏️</button>
           <button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger)" onclick="removeEmail('${e.id}','${e.email.replace(/'/g,"\\'")}')">🗑️</button>
