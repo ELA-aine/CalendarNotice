@@ -647,6 +647,22 @@
           </div>
         </div>
       </div>
+
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+        <label class="form-label" style="font-size:0.82rem">Contact <span style="font-weight:400;color:var(--text-light)">(optional)</span></label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:22px;text-align:center">💬</span>
+          <input type="text" class="form-control br-wechat" placeholder="WeChat ID" style="padding:8px 12px;font-size:0.88rem" />
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:22px;text-align:center">📱</span>
+          <input type="text" class="form-control br-whatsapp" placeholder="WhatsApp number" style="padding:8px 12px;font-size:0.88rem" />
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:22px;text-align:center">✉️</span>
+          <input type="email" class="form-control br-email" placeholder="Email address" style="padding:8px 12px;font-size:0.88rem" />
+        </div>
+      </div>
     `;
     container.appendChild(row);
     row.querySelector('.br-name').focus();
@@ -682,8 +698,13 @@
       const christian = getBulkRowValue(row, 'br-christian') === 'true';
       const attends   = getBulkRowValue(row, 'br-attends')   !== 'false';
 
+      const contact = {
+        wechat:   row.querySelector('.br-wechat').value.trim()   || null,
+        whatsapp: row.querySelector('.br-whatsapp').value.trim() || null,
+        email:    row.querySelector('.br-email').value.trim()    || null,
+      };
       if (!name || !month || !day) continue;
-      toAdd.push({ id: generateId(), name, month, day, year, gender, christian, attends, contact: {} });
+      toAdd.push({ id: generateId(), name, month, day, year, gender, christian, attends, contact });
     }
 
     if (!toAdd.length) { toast('Fill in at least one name, month and day.', 'warning'); return; }
