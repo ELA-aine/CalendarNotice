@@ -6,7 +6,13 @@
     "day": 27,
     "year": 2003,
     "gender": "female",
-    "christian": false
+    "christian": false,
+    "attends": true,
+    "contact": {
+      "wechat": "elianm212317994",
+      "whatsapp": null,
+      "email": null
+    }
   },
   {
     "id": "mn89s5hwyiprl",
