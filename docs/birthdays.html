@@ -52,15 +52,16 @@
     <div style="display:flex;gap:10px">
       <button class="btn btn-ghost" onclick="openImportModal()">📂 Import CSV</button>
       <button class="btn btn-ghost" onclick="openBulkBirthdayModal()">📋 Add List</button>
+      <button class="btn btn-ghost" id="select-mode-btn" onclick="toggleSelectMode()">☑️ Select</button>
       <button class="btn btn-primary" onclick="openAddModal()">＋ Add Birthday</button>
     </div>
   </div>
 
-  <!-- Bulk delete bar (hidden until rows selected) -->
-  <div id="bulk-delete-bar" style="display:none;background:var(--danger-light);border:1.5px solid var(--danger);border-radius:var(--radius-sm);padding:12px 18px;margin-bottom:14px;display:none;align-items:center;gap:12px">
-    <span id="bulk-delete-count" style="font-weight:800;color:#DC2626;font-size:0.92rem"></span>
+  <!-- Bulk delete bar -->
+  <div id="bulk-delete-bar" style="display:none;background:var(--danger-light);border:1.5px solid var(--danger);border-radius:var(--radius-sm);padding:12px 18px;margin-bottom:14px;align-items:center;gap:12px;flex-wrap:wrap">
+    <span id="bulk-delete-count" style="font-weight:800;color:#DC2626;font-size:0.92rem;flex:1">Tap rows to select</span>
     <button class="btn btn-danger btn-sm" onclick="confirmBulkDelete()">🗑️ Delete Selected</button>
-    <button class="btn btn-ghost btn-sm" onclick="clearSelection()">✕ Cancel</button>
+    <button class="btn btn-ghost btn-sm" onclick="toggleSelectMode()">✕ Done</button>
   </div>
 
   <!-- Search & filter -->
@@ -97,7 +98,6 @@
       <table class="table-cute">
         <thead>
           <tr>
-            <th style="width:36px"><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" style="cursor:pointer;width:16px;height:16px;accent-color:var(--primary)" /></th>
             <th>Person</th>
             <th>Birthday</th>
             <th>Age</th>
@@ -378,8 +378,7 @@
       const { text, cls } = upcomingLabel(days);
       const age = getAge(b.year);
       return `
-        <tr>
-          <td><input type="checkbox" class="row-checkbox" data-id="${b.id}" onchange="onRowCheck()" style="cursor:pointer;width:16px;height:16px;accent-color:var(--primary)" /></td>
+        <tr id="tr-${b.id}" onclick="onRowClick('${b.id}',event)" style="cursor:default">
           <td>
             <div style="display:flex;align-items:center;gap:10px">
               <div style="width:36px;height:36px;border-radius:50%;background:${avatarBg(b.gender)};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${genderEmoji(b.gender)}</div>
@@ -547,45 +546,71 @@
 
   loadBirthdays();
 
-  // ── Multi-select & bulk delete ────────────────────────────────────────
-  function getSelectedIds() {
-    return [...document.querySelectorAll('.row-checkbox:checked')].map(c => c.dataset.id);
+  // ── Select mode & bulk delete ─────────────────────────────────────────
+  let selectMode = false;
+  let selectedIds = new Set();
+
+  function toggleSelectMode() {
+    selectMode = !selectMode;
+    selectedIds.clear();
+
+    const btn = document.getElementById('select-mode-btn');
+    const bar = document.getElementById('bulk-delete-bar');
+
+    if (selectMode) {
+      btn.textContent = '✕ Cancel';
+      btn.style.background = 'var(--danger-light)';
+      btn.style.color = '#DC2626';
+      bar.style.display = 'flex';
+      updateBulkBar();
+      document.querySelectorAll('[id^="tr-"]').forEach(tr => tr.style.cursor = 'pointer');
+    } else {
+      btn.textContent = '☑️ Select';
+      btn.style.background = '';
+      btn.style.color = '';
+      bar.style.display = 'none';
+      document.querySelectorAll('[id^="tr-"]').forEach(tr => {
+        tr.style.cursor = 'default';
+        tr.style.background = '';
+      });
+    }
   }
 
-  function onRowCheck() {
-    const ids   = getSelectedIds();
-    const bar   = document.getElementById('bulk-delete-bar');
-    const all   = document.getElementById('select-all');
-    const total = document.querySelectorAll('.row-checkbox').length;
-    bar.style.display = ids.length ? 'flex' : 'none';
-    document.getElementById('bulk-delete-count').textContent = `${ids.length} selected`;
-    all.indeterminate = ids.length > 0 && ids.length < total;
-    all.checked = ids.length === total && total > 0;
+  function onRowClick(id, e) {
+    if (!selectMode) return;
+    if (e.target.closest('button')) return; // don't intercept action buttons
+
+    const tr = document.getElementById(`tr-${id}`);
+    if (selectedIds.has(id)) {
+      selectedIds.delete(id);
+      tr.style.background = '';
+    } else {
+      selectedIds.add(id);
+      tr.style.background = '#FFF0F7';
+      tr.style.outline = '1.5px solid var(--primary)';
+    }
+    // Reset outline for deselected
+    if (!selectedIds.has(id)) tr.style.outline = '';
+    updateBulkBar();
   }
 
-  function toggleSelectAll(cb) {
-    document.querySelectorAll('.row-checkbox').forEach(c => c.checked = cb.checked);
-    onRowCheck();
-  }
-
-  function clearSelection() {
-    document.querySelectorAll('.row-checkbox').forEach(c => c.checked = false);
-    document.getElementById('select-all').checked = false;
-    onRowCheck();
+  function updateBulkBar() {
+    const n = selectedIds.size;
+    document.getElementById('bulk-delete-count').textContent =
+      n === 0 ? 'Tap rows to select' : `${n} selected`;
+    document.querySelector('#bulk-delete-bar .btn-danger').disabled = n === 0;
   }
 
   async function confirmBulkDelete() {
-    const ids = getSelectedIds();
-    if (!ids.length) return;
-    if (!confirm(`Delete ${ids.length} birthday${ids.length > 1 ? 's' : ''}? This cannot be undone.`)) return;
+    if (!selectedIds.size) return;
+    if (!confirm(`Delete ${selectedIds.size} birthday${selectedIds.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
     try {
-      const list = allBirthdays.filter(b => !ids.includes(b.id));
+      const list = allBirthdays.filter(b => !selectedIds.has(b.id));
       await API.saveBirthdays(list);
       allBirthdays = list;
+      toggleSelectMode();
       renderTable(allBirthdays);
-      document.getElementById('bulk-delete-bar').style.display = 'none';
-      document.getElementById('select-all').checked = false;
-      toast(`Deleted ${ids.length} birthday${ids.length > 1 ? 's' : ''} 🗑️`);
+      toast(`Deleted ${selectedIds.size || 'selected'} birthdays 🗑️`);
     } catch (err) {
       toast('Delete failed: ' + err.message, 'error');
     }
