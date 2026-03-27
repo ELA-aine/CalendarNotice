@@ -56,7 +56,6 @@
     <div style="display:flex;gap:10px">
       <button class="btn btn-ghost" onclick="openImportModal()">📂 Import CSV</button>
       <button class="btn btn-ghost" onclick="openBulkBirthdayModal()">📋 Add List</button>
-      <button class="btn btn-ghost" id="select-mode-btn" onclick="toggleSelectMode()">☑️ Select</button>
       <button class="btn btn-primary" onclick="openAddModal()">＋ Add Birthday</button>
     </div>
   </div>
@@ -87,12 +86,8 @@
         <option value="11">November</option>
         <option value="12">December</option>
       </select>
-      <select id="filter-gender" class="form-control" style="max-width:150px" onchange="filterBirthdays()">
-        <option value="">All genders</option>
-        <option value="male">👦 Male</option>
-        <option value="female">👧 Female</option>
-      </select>
-      <span id="count-label" class="badge badge-pink" style="margin-left:auto"></span>
+<button class="btn btn-ghost btn-sm" id="select-mode-btn" onclick="toggleSelectMode()" style="margin-left:auto">☑️ Select</button>
+      <span id="count-label" class="badge badge-pink"></span>
     </div>
   </div>
 
@@ -468,13 +463,10 @@
   function filterBirthdays() {
     const q = document.getElementById('search-input').value.toLowerCase();
     const month = document.getElementById('filter-month').value;
-    const gender = document.getElementById('filter-gender').value;
-
     const filtered = allBirthdays.filter(b => {
       const matchName = b.name.toLowerCase().includes(q);
       const matchMonth = !month || String(b.month) === month;
-      const matchGender = !gender || b.gender === gender;
-      return matchName && matchMonth && matchGender;
+      return matchName && matchMonth;
     });
 
     renderTable(filtered);

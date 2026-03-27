@@ -128,10 +128,10 @@ function buildTestEmailHtml() {
 <head><meta charset="UTF-8"/></head>
 <body style="font-family:'Helvetica Neue',Arial,sans-serif;background:#FFF0F8;margin:0;padding:20px">
   <div style="max-width:560px;margin:0 auto">
-    <div style="background:linear-gradient(135deg,#BE185D,#7E22CE);border-radius:18px 18px 0 0;padding:32px 32px;text-align:center">
+    <div style="background-color:#7E22CE;background-image:linear-gradient(135deg,#BE185D,#7E22CE);border-radius:18px 18px 0 0;padding:32px 32px;text-align:center">
       <div style="font-size:3rem;margin-bottom:10px">🎉</div>
-      <h1 style="color:#FFFFFF;margin:0 0 8px;font-size:2rem;font-weight:900;letter-spacing:-0.02em;text-shadow:0 2px 8px rgba(0,0,0,0.45)">Test Email — It works!</h1>
-      <p style="color:#FFFFFF;margin:0;font-size:0.92rem;font-weight:600;background:rgba(0,0,0,0.30);display:inline-block;padding:4px 14px;border-radius:999px">${todayLabel}</p>
+      <h1 style="color:#FFFFFF;margin:0 0 8px;font-size:2rem;font-weight:900;letter-spacing:-0.02em">Test Email — It works!</h1>
+      <p style="color:#FFFFFF;margin:0;font-size:0.92rem;font-weight:600;background-color:#5B0F9E;display:inline-block;padding:4px 14px;border-radius:999px">${todayLabel}</p>
     </div>
     <div style="background:white;border-radius:0 0 18px 18px;padding:28px 32px;border:2px solid #D946EF;border-top:none">
       <p style="color:#374151;font-size:0.95rem;margin:0 0 16px">
