@@ -226,6 +226,7 @@ body {
 .table-cute th {
   background: var(--bg);
   padding: 12px 16px;
+  white-space: nowrap;
   text-align: left;
   font-weight: 800;
   color: var(--text-light);
@@ -238,6 +239,7 @@ body {
 .table-cute td {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
   font-size: 0.93rem;
 }
 
