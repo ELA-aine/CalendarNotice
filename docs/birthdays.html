@@ -103,7 +103,7 @@
         <thead>
           <tr id="sort-header-row">
             <th onclick="setSort('name')"      style="cursor:pointer;user-select:none" id="sh-name">Person <span class="sort-icon">↕</span></th>
-            <th>Birthday</th>
+            <th onclick="setSort('birthday')"  style="cursor:pointer;user-select:none" id="sh-birthday">Birthday <span class="sort-icon">↕</span></th>
             <th onclick="setSort('age')"       style="cursor:pointer;user-select:none" id="sh-age">Age <span class="sort-icon">↕</span></th>
             <th onclick="setSort('upcoming')"  style="cursor:pointer;user-select:none" id="sh-upcoming">Coming up <span class="sort-icon">↕</span></th>
             <th onclick="setSort('christian')" style="cursor:pointer;user-select:none" id="sh-christian">Faith <span class="sort-icon">↕</span></th>
@@ -373,7 +373,7 @@
     if (sortKey === key) sortAsc = !sortAsc;
     else { sortKey = key; sortAsc = true; }
     // Update header icons
-    ['name','age','upcoming','christian','attends','gender'].forEach(k => {
+    ['name','birthday','age','upcoming','christian','attends','gender'].forEach(k => {
       const el = document.getElementById('sh-' + k);
       if (!el) return;
       const icon = el.querySelector('.sort-icon');
@@ -388,6 +388,9 @@
       let av, bv;
       if (sortKey === 'upcoming') {
         av = daysUntil(a.month, a.day); bv = daysUntil(b.month, b.day);
+      } else if (sortKey === 'birthday') {
+        av = parseInt(a.month) * 100 + parseInt(a.day);
+        bv = parseInt(b.month) * 100 + parseInt(b.day);
       } else if (sortKey === 'age') {
         av = a.year ? parseInt(a.year) : 9999; bv = b.year ? parseInt(b.year) : 9999;
         // younger = higher year number, so flip: ascending age = lower year
