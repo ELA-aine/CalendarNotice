@@ -107,7 +107,7 @@
             <th onclick="setSort('age')"       style="cursor:pointer;user-select:none" id="sh-age">Age <span class="sort-icon">↕</span></th>
             <th onclick="setSort('upcoming')"  style="cursor:pointer;user-select:none" id="sh-upcoming">Coming up <span class="sort-icon">↕</span></th>
             <th onclick="setSort('christian')" style="cursor:pointer;user-select:none" id="sh-christian">Faith <span class="sort-icon">↕</span></th>
-            <th onclick="setSort('attends')"   style="cursor:pointer;user-select:none" id="sh-attends">Fellowship <span class="sort-icon">↕</span></th>
+            <th onclick="setSort('attends')"   style="cursor:pointer;user-select:none" id="sh-attends">Attend <span class="sort-icon">↕</span></th>
             <th onclick="setSort('gender')"    style="cursor:pointer;user-select:none" id="sh-gender">Gender <span class="sort-icon">↕</span></th>
             <th>Contact</th>
             <th style="text-align:right">Actions</th>
@@ -445,7 +445,7 @@
           <td>${age !== null ? `<span class="badge badge-green">🎂 ${birthdayPassed ? age : age - 1}</span>` : '<span style="color:var(--text-light)">—</span>'}</td>
           <td><span class="badge ${cls}">${text}</span></td>
           <td><span class="badge ${b.christian ? 'badge-purple' : 'badge-yellow'}">${b.christian ? '✝️ Christian' : '🌸 Non-Christian'}</span></td>
-          <td><span class="badge ${b.attends !== false ? 'badge-green' : 'badge-red'}">${b.attends !== false ? '✅ Often' : '🔸 Not Often'}</span></td>
+          <td style="text-align:center">${b.attends !== false ? '✅' : '🔸'}</td>
           <td><span class="badge ${b.gender === 'female' ? 'badge-pink' : 'badge-blue'}">${genderEmoji(b.gender)} ${b.gender || '—'}</span></td>
           <td>
             <div style="display:flex;gap:4px;align-items:center">
