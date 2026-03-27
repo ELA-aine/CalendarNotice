@@ -1,0 +1,9 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+
+# Node (GitHub Actions scripts)
+node_modules/
+package-lock.json

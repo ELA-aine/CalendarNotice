@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎂 BirthdayNotice — Calendar</title>
+  <link rel="stylesheet" href="css/app.css" />
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+  <style>
+    .layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
+    .calendar-wrap { background: white; border-radius: 18px; padding: 20px; box-shadow: var(--shadow); border: 1.5px solid var(--border); }
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+    @media(max-width:900px){ .layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav class="app-nav" id="app-nav"></nav>
+
+<div class="container">
+
+  <!-- Config warning -->
+  <div class="config-banner" id="config-banner" style="display:none">
+    ⚠️ &nbsp;Please <a href="settings.html"><strong>configure your GitHub settings</strong></a> first to save data.
+  </div>
+
+  <div class="page-header flex-between">
+    <div>
+      <h1>📅 Calendar</h1>
+      <p>All birthdays at a glance</p>
+    </div>
+    <a href="birthdays.html" class="btn btn-primary">＋ Add Birthday</a>
+  </div>
+
+  <!-- Stats row -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon">🎂</div>
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-label">Total Birthdays</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🎉</div>
+      <div class="stat-value" id="stat-today">—</div>
+      <div class="stat-label">Today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-value" id="stat-week">—</div>
+      <div class="stat-label">This Week</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📧</div>
+      <div class="stat-value" id="stat-emails">—</div>
+      <div class="stat-label">Email Watchers</div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- Calendar -->
+    <div class="calendar-wrap">
+      <div id="calendar"></div>
+    </div>
+
+    <!-- Sidebar: Upcoming -->
+    <div class="sidebar">
+      <div class="card">
+        <div class="flex-between mb-3">
+          <h3 style="font-weight:900;font-size:1rem">🌟 Coming Up</h3>
+          <span class="badge badge-pink" id="upcoming-count">0</span>
+        </div>
+        <div class="upcoming-list" id="upcoming-list">
+          <div class="empty-state" style="padding:24px 0">
+            <div class="empty-icon">🎈</div>
+            <p>No upcoming birthdays</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-weight:900;font-size:1rem;margin-bottom:14px">🎊 Today's Birthdays</h3>
+        <div id="today-list">
+          <div class="empty-state" style="padding:20px 0">
+            <div class="empty-icon">🎂</div>
+            <p style="font-size:0.85rem">No birthdays today</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Birthday detail modal -->
+<div class="modal-overlay" id="event-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-name">Birthday</h2>
+      <button class="modal-close" onclick="closeModal('event-modal')">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script>
+  let allBirthdays = [];
+
+  const GENDER_COLORS = {
+    male: '#38BDF8',
+    female: '#FF6B9D',
+    other: '#C084FC',
+  };
+
+  async function loadData() {
+    const [birthdays, emails] = await Promise.all([
+      API.getBirthdays(),
+      API.getEmails(),
+    ]);
+    allBirthdays = birthdays;
+    renderStats(birthdays, emails);
+    renderUpcoming(birthdays);
+    renderToday(birthdays);
+    initCalendar(birthdays);
+  }
+
+  function renderStats(birthdays, emails) {
+    document.getElementById('stat-total').textContent = birthdays.length;
+    document.getElementById('stat-emails').textContent = emails.length;
+
+    const todayCount = birthdays.filter(b => isBirthdayToday(b.month, b.day)).length;
+    const weekCount  = birthdays.filter(b => daysUntil(b.month, b.day) <= 7).length;
+
+    document.getElementById('stat-today').textContent = todayCount;
+    document.getElementById('stat-week').textContent  = weekCount;
+  }
+
+  function renderUpcoming(birthdays) {
+    const sorted = [...birthdays]
+      .map(b => ({ ...b, days: daysUntil(b.month, b.day) }))
+      .filter(b => b.days <= 30)
+      .sort((a, b) => a.days - b.days)
+      .slice(0, 8);
+
+    document.getElementById('upcoming-count').textContent = sorted.length;
+
+    const el = document.getElementById('upcoming-list');
+    if (!sorted.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:24px 0"><div class="empty-icon">🎈</div><p>No upcoming birthdays</p></div>`;
+      return;
+    }
+
+    el.innerHTML = sorted.map(b => {
+      const { text, cls } = upcomingLabel(b.days);
+      return `
+        <div class="upcoming-item" onclick="showBirthdayModal('${b.id}')">
+          <div class="upcoming-avatar" style="background:${avatarBg(b.gender)}">${genderEmoji(b.gender)}</div>
+          <div>
+            <div class="upcoming-name">${b.name}</div>
+            <div class="upcoming-date">${formatDate(b.year, b.month, b.day)}</div>
+          </div>
+          <span class="badge ${cls}" style="margin-left:auto">${text}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderToday(birthdays) {
+    const todays = birthdays.filter(b => isBirthdayToday(b.month, b.day));
+    const el = document.getElementById('today-list');
+
+    if (!todays.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:20px 0"><div class="empty-icon">🎂</div><p style="font-size:0.85rem">No birthdays today</p></div>`;
+      return;
+    }
+
+    el.innerHTML = todays.map(b => `
+      <div class="upcoming-item" onclick="showBirthdayModal('${b.id}')" style="background:var(--primary-light);border-color:var(--primary)">
+        <div class="upcoming-avatar" style="background:white">${genderEmoji(b.gender)}</div>
+        <div>
+          <div class="upcoming-name">${b.name} 🎉</div>
+          <div class="upcoming-date">${b.year ? `Turning ${getAge(b.year)}!` : 'Happy Birthday!'}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function showBirthdayModal(id) {
+    const b = allBirthdays.find(x => x.id === id);
+    if (!b) return;
+
+    document.getElementById('modal-name').textContent = `${genderEmoji(b.gender)} ${b.name}`;
+
+    const age = getAge(b.year);
+    const days = daysUntil(b.month, b.day);
+    const { text, cls } = upcomingLabel(days);
+
+    document.getElementById('modal-body').innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-blue">📅 ${formatDate(b.year, b.month, b.day)}</span>
+          ${age !== null ? `<span class="badge badge-green">🎂 Age ${age + (days === 0 ? 0 : 1)}</span>` : ''}
+          <span class="badge ${b.christian ? 'badge-purple' : 'badge-yellow'}">${b.christian ? '✝️ Christian' : '🌸 Non-Christian'}</span>
+          <span class="badge ${b.gender === 'male' ? 'badge-blue' : b.gender === 'female' ? 'badge-pink' : 'badge-purple'}">${b.gender || 'Other'}</span>
+        </div>
+        <div class="upcoming-item" style="cursor:default">
+          <span>${text}</span>
+        </div>
+        ${days <= 7 ? `<p style="font-size:0.85rem;color:var(--text-muted)">🔔 Email notifications will be sent for this birthday.</p>` : ''}
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <a href="birthdays.html" class="btn btn-ghost btn-sm">✏️ Edit</a>
+        </div>
+      </div>
+    `;
+
+    openModal('event-modal');
+  }
+
+  function initCalendar(birthdays) {
+    const calEl = document.getElementById('calendar');
+    const year = new Date().getFullYear();
+
+    const events = [];
+    birthdays.forEach(b => {
+      // Create recurring events for current year and next year
+      [year - 1, year, year + 1].forEach(y => {
+        events.push({
+          id: b.id,
+          title: `${genderEmoji(b.gender)} ${b.name}`,
+          start: `${y}-${String(b.month).padStart(2,'0')}-${String(b.day).padStart(2,'0')}`,
+          allDay: true,
+          color: GENDER_COLORS[b.gender] || '#C084FC',
+          extendedProps: { birthdayId: b.id },
+        });
+      });
+    });
+
+    const cal = new FullCalendar.Calendar(calEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,listMonth',
+      },
+      events,
+      eventClick(info) {
+        showBirthdayModal(info.event.extendedProps.birthdayId);
+      },
+      eventMouseEnter(info) {
+        info.el.style.cursor = 'pointer';
+      },
+      height: 'auto',
+      fixedWeekCount: false,
+    });
+
+    cal.render();
+  }
+
+  loadData().catch(err => {
+    console.error(err);
+    toast('Could not load data. Check Settings.', 'error');
+    // Still init empty calendar
+    initCalendar([]);
+    renderStats([], []);
+  });
+</script>
+</body>
+</html>

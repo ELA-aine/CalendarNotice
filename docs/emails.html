@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎂 BirthdayNotice — Email List</title>
+  <link rel="stylesheet" href="css/app.css" />
+  <style>
+    .email-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      background: white;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      transition: all 0.2s;
+    }
+    .email-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+    .email-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .email-address { font-weight: 700; font-size: 0.95rem; word-break: break-all; }
+    .email-added { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; }
+    .email-grid { display: flex; flex-direction: column; gap: 10px; }
+  </style>
+</head>
+<body>
+
+<nav class="app-nav" id="app-nav"></nav>
+
+<div class="container">
+
+  <div class="config-banner" id="config-banner" style="display:none">
+    ⚠️ &nbsp;Please <a href="settings.html"><strong>configure your GitHub settings</strong></a> first to save data.
+  </div>
+
+  <div class="page-header flex-between">
+    <div>
+      <h1>📧 Email Notifications</h1>
+      <p>These addresses receive birthday alerts automatically</p>
+    </div>
+    <button class="btn btn-primary" onclick="openAddModal()">＋ Add Email</button>
+  </div>
+
+  <!-- Info card -->
+  <div class="card mb-3" style="background:var(--accent-light);border-color:var(--accent);padding:16px 20px">
+    <div style="display:flex;align-items:flex-start;gap:12px">
+      <span style="font-size:1.4rem">💡</span>
+      <div>
+        <div style="font-weight:800;margin-bottom:4px">How it works</div>
+        <div style="font-size:0.88rem;color:var(--text-muted)">
+          A GitHub Actions workflow runs every day at <strong>8:00 AM UTC</strong>. It checks for upcoming birthdays (today &amp; next 3 days) and sends a warm birthday email to everyone on this list. Christian birthdays get a faith-based greeting 🙏
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email count -->
+  <div class="flex-between mb-2">
+    <span id="email-count" class="badge badge-pink">0 recipients</span>
+    <button class="btn btn-ghost btn-sm" onclick="loadEmails()">🔄 Refresh</button>
+  </div>
+
+  <!-- Email list -->
+  <div class="email-grid" id="email-grid">
+    <div style="text-align:center;padding:32px;color:var(--text-light)">Loading... 📧</div>
+  </div>
+
+  <div class="empty-state" id="empty-state" style="display:none">
+    <div class="empty-icon">📭</div>
+    <h3>No email addresses yet!</h3>
+    <p>Add email addresses to start receiving birthday notifications.</p>
+    <button class="btn btn-primary mt-3" onclick="openAddModal()">＋ Add Email</button>
+  </div>
+</div>
+
+<!-- Add email modal -->
+<div class="modal-overlay" id="email-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <h2>📧 Add Email</h2>
+      <button class="modal-close" onclick="closeModal('email-modal')">✕</button>
+    </div>
+    <form onsubmit="saveEmail(event)">
+      <div class="form-group">
+        <label class="form-label">Email Address ✉️</label>
+        <input type="email" id="new-email" class="form-control" placeholder="someone@example.com" required />
+        <div class="form-hint">This address will receive birthday notification emails</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Label (optional) 🏷️</label>
+        <input type="text" id="new-label" class="form-control" placeholder="e.g. Work team, Family" />
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('email-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="email-save-btn">💾 Add Email</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Remove confirm modal -->
+<div class="modal-overlay" id="remove-modal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h2>🗑️ Remove Email?</h2>
+      <button class="modal-close" onclick="closeModal('remove-modal')">✕</button>
+    </div>
+    <p style="color:var(--text-muted);margin-bottom:24px">
+      <strong id="remove-email-display"></strong> will no longer receive birthday notifications.
+    </p>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('remove-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmRemove()">🗑️ Remove</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script>
+  let allEmails = [];
+  let removeId = null;
+
+  async function loadEmails() {
+    try {
+      allEmails = await API.getEmails();
+    } catch (e) {
+      toast('Could not load emails. Check Settings.', 'error');
+      allEmails = [];
+    }
+    renderEmails();
+  }
+
+  function renderEmails() {
+    const grid = document.getElementById('email-grid');
+    const empty = document.getElementById('empty-state');
+    const count = document.getElementById('email-count');
+
+    count.textContent = `${allEmails.length} ${allEmails.length === 1 ? 'recipient' : 'recipients'}`;
+
+    if (!allEmails.length) {
+      grid.innerHTML = '';
+      grid.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+
+    grid.style.display = 'flex';
+    empty.style.display = 'none';
+
+    grid.innerHTML = allEmails.map(e => `
+      <div class="email-card">
+        <div class="email-avatar">📧</div>
+        <div style="flex:1;min-width:0">
+          <div class="email-address">${e.email}</div>
+          ${e.label ? `<div class="email-added">${e.label}</div>` : ''}
+          <div class="email-added">Added ${e.addedAt ? new Date(e.addedAt).toLocaleDateString() : 'recently'}</div>
+        </div>
+        <button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);flex-shrink:0" onclick="removeEmail('${e.id}','${e.email.replace(/'/g,"\\'")}')">
+          🗑️ Remove
+        </button>
+      </div>
+    `).join('');
+  }
+
+  function openAddModal() {
+    document.getElementById('new-email').value = '';
+    document.getElementById('new-label').value = '';
+    openModal('email-modal');
+  }
+
+  async function saveEmail(e) {
+    e.preventDefault();
+
+    if (!API.isConfigured()) {
+      toast('Please configure GitHub settings first! ⚙️', 'warning');
+      return;
+    }
+
+    const email = document.getElementById('new-email').value.trim();
+    const label = document.getElementById('new-label').value.trim();
+
+    if (allEmails.some(x => x.email.toLowerCase() === email.toLowerCase())) {
+      toast('This email is already on the list! 📧', 'warning');
+      return;
+    }
+
+    const btn = document.getElementById('email-save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+      const list = [...allEmails, {
+        id: generateId(),
+        email,
+        label: label || null,
+        addedAt: new Date().toISOString(),
+      }];
+      await API.saveEmails(list);
+      allEmails = list;
+      renderEmails();
+      closeModal('email-modal');
+      toast(`Added ${email}! 🎉`);
+    } catch (err) {
+      toast('Save failed: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 Add Email';
+    }
+  }
+
+  function removeEmail(id, email) {
+    removeId = id;
+    document.getElementById('remove-email-display').textContent = email;
+    openModal('remove-modal');
+  }
+
+  async function confirmRemove() {
+    if (!removeId) return;
+    try {
+      const list = allEmails.filter(e => e.id !== removeId);
+      await API.saveEmails(list);
+      allEmails = list;
+      renderEmails();
+      closeModal('remove-modal');
+      toast('Email removed 🗑️');
+    } catch (err) {
+      toast('Remove failed: ' + err.message, 'error');
+    }
+    removeId = null;
+  }
+
+  loadEmails();
+</script>
+</body>
+</html>

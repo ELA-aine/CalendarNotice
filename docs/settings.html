@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎂 BirthdayNotice — Settings</title>
+  <link rel="stylesheet" href="css/app.css" />
+  <style>
+    .settings-section {
+      background: white;
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border);
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .settings-section-header {
+      padding: 18px 24px;
+      border-bottom: 1.5px solid var(--border);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .settings-section-header h3 { font-weight: 900; font-size: 1rem; }
+    .settings-section-header p { font-size: 0.82rem; color: var(--text-muted); margin-top: 2px; }
+    .settings-section-body { padding: 24px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .status-dot.ok  { background: var(--success); }
+    .status-dot.err { background: var(--danger); }
+    .step-list { counter-reset: steps; display: flex; flex-direction: column; gap: 14px; }
+    .step-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 900;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-text { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
+    .step-text strong { color: var(--text); }
+    .code-inline {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 7px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+<nav class="app-nav" id="app-nav"></nav>
+
+<div class="container" style="max-width:720px">
+
+  <div class="page-header">
+    <h1>⚙️ Settings</h1>
+    <p>Connect your GitHub repo to enable saving and auto-notifications</p>
+  </div>
+
+  <!-- Status banner -->
+  <div id="status-banner" class="card mb-3" style="padding:14px 20px;display:flex;align-items:center;gap:10px;font-weight:700;font-size:0.9rem">
+    <span class="status-dot" id="status-dot"></span>
+    <span id="status-text">Checking configuration...</span>
+  </div>
+
+  <!-- GitHub config -->
+  <div class="settings-section">
+    <div class="settings-section-header">
+      <span style="font-size:1.4rem">🐙</span>
+      <div>
+        <h3>GitHub Repository</h3>
+        <p>Used to store birthday and email data as JSON files in your repo</p>
+      </div>
+    </div>
+    <div class="settings-section-body">
+      <div class="form-group">
+        <label class="form-label">GitHub Username</label>
+        <input type="text" id="gh-owner" class="form-control" placeholder="your-username" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Repository Name</label>
+        <input type="text" id="gh-repo" class="form-control" placeholder="CalendarNotice" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Branch</label>
+        <input type="text" id="gh-branch" class="form-control" placeholder="main" value="main" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Personal Access Token (PAT) 🔑</label>
+        <input type="password" id="gh-token" class="form-control" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="new-password" />
+        <div class="form-hint">
+          Needs <strong>repo</strong> scope. Stored only in your browser's localStorage — never sent anywhere except GitHub's API.
+          <a href="https://github.com/settings/tokens/new?scopes=repo&description=BirthdayNotice" target="_blank" rel="noopener" style="color:var(--primary)">Create a token →</a>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="saveGitHubConfig()">💾 Save Configuration</button>
+        <button class="btn btn-ghost" onclick="testConnection()">🔌 Test Connection</button>
+      </div>
+      <div id="test-result" style="display:none;margin-top:14px;padding:12px 16px;border-radius:var(--radius-xs);font-weight:700;font-size:0.88rem"></div>
+    </div>
+  </div>
+
+  <!-- Email / Gmail config -->
+  <div class="settings-section">
+    <div class="settings-section-header">
+      <span style="font-size:1.4rem">📬</span>
+      <div>
+        <h3>Email Sending (GitHub Actions)</h3>
+        <p>Set these as GitHub Actions secrets — the workflow handles sending</p>
+      </div>
+    </div>
+    <div class="settings-section-body">
+      <div class="card" style="background:var(--accent-light);border-color:var(--accent);padding:14px 18px;margin-bottom:20px">
+        <strong>⚡ These settings are stored as GitHub Actions secrets, not here.</strong>
+        <span style="font-size:0.85rem;color:var(--text-muted)"> Follow the steps below to configure email sending.</span>
+      </div>
+
+      <div class="step-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <strong>Enable 2-Step Verification</strong> on your Google account at
+            <a href="https://myaccount.google.com/security" target="_blank" rel="noopener" style="color:var(--primary)">myaccount.google.com/security</a>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <strong>Generate a Gmail App Password</strong> at
+            <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" style="color:var(--primary)">myaccount.google.com/apppasswords</a>.
+            Select app: <em>Mail</em>, device: <em>Other</em>.
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <strong>Go to your repo → Settings → Secrets and variables → Actions</strong> and add two secrets:
+            <ul style="margin-top:8px;margin-left:16px;display:flex;flex-direction:column;gap:5px">
+              <li><span class="code-inline">GMAIL_USER</span> — your Gmail address</li>
+              <li><span class="code-inline">GMAIL_PASS</span> — the 16-character App Password</li>
+            </ul>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-text">
+            <strong>Done!</strong> The workflow at <span class="code-inline">.github/workflows/birthday-check.yml</span>
+            runs every day at 8:00 AM UTC and sends birthday emails automatically. 🎉
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification timing -->
+  <div class="settings-section">
+    <div class="settings-section-header">
+      <span style="font-size:1.4rem">⏰</span>
+      <div>
+        <h3>Notification Timing</h3>
+        <p>When to send birthday reminder emails</p>
+      </div>
+    </div>
+    <div class="settings-section-body">
+      <div class="form-group">
+        <label class="form-label">Alert days in advance</label>
+        <select id="advance-days" class="form-control" style="max-width:200px" onchange="saveLocalSettings()">
+          <option value="0">On the day only</option>
+          <option value="1">1 day before</option>
+          <option value="3" selected>3 days before</option>
+          <option value="7">7 days before</option>
+        </select>
+        <div class="form-hint">Emails are sent for birthdays within this window. Update the workflow cron or DAYS_AHEAD env to match.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="settings-section">
+    <div class="settings-section-header" style="background:var(--danger-light);border-bottom-color:#FECACA">
+      <span style="font-size:1.4rem">⚠️</span>
+      <div>
+        <h3 style="color:#DC2626">Danger Zone</h3>
+        <p>Irreversible local actions</p>
+      </div>
+    </div>
+    <div class="settings-section-body">
+      <button class="btn btn-danger" onclick="clearLocalData()">🗑️ Clear Local Settings</button>
+      <p class="form-hint mt-1">Removes your PAT and config from this browser. Your repo data is unaffected.</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script>
+  function loadForm() {
+    const c = API.getConfig();
+    document.getElementById('gh-owner').value  = c.owner;
+    document.getElementById('gh-repo').value   = c.repo;
+    document.getElementById('gh-branch').value = c.branch || 'main';
+    document.getElementById('gh-token').value  = c.token ? '••••••••••••••••' : '';
+
+    const days = localStorage.getItem('advance_days') || '3';
+    document.getElementById('advance-days').value = days;
+
+    updateStatusBanner();
+  }
+
+  function updateStatusBanner() {
+    const dot  = document.getElementById('status-dot');
+    const text = document.getElementById('status-text');
+
+    if (API.isConfigured()) {
+      dot.className  = 'status-dot ok';
+      text.textContent = '✅ GitHub configuration is set. Ready to go!';
+      document.getElementById('status-banner').style.borderColor = 'var(--success)';
+      document.getElementById('status-banner').style.background  = 'var(--success-light)';
+    } else {
+      dot.className  = 'status-dot err';
+      text.textContent = '⚠️ Not configured — add your GitHub details below.';
+      document.getElementById('status-banner').style.borderColor = 'var(--warning)';
+      document.getElementById('status-banner').style.background  = 'var(--warning-light)';
+    }
+  }
+
+  function saveGitHubConfig() {
+    const owner  = document.getElementById('gh-owner').value.trim();
+    const repo   = document.getElementById('gh-repo').value.trim();
+    const branch = document.getElementById('gh-branch').value.trim() || 'main';
+    const token  = document.getElementById('gh-token').value.trim();
+
+    if (!owner || !repo) {
+      toast('Please fill in username and repo name.', 'warning');
+      return;
+    }
+
+    // Only update token if not placeholder
+    if (token && !token.includes('•')) {
+      localStorage.setItem('gh_token', token);
+    }
+    localStorage.setItem('gh_owner', owner);
+    localStorage.setItem('gh_repo', repo);
+    localStorage.setItem('gh_branch', branch);
+
+    toast('Settings saved! 🎉');
+    updateStatusBanner();
+  }
+
+  async function testConnection() {
+    const resultEl = document.getElementById('test-result');
+    resultEl.style.display = 'block';
+    resultEl.style.background = 'var(--accent-light)';
+    resultEl.style.borderLeft = '4px solid var(--accent)';
+    resultEl.textContent = '🔌 Testing connection...';
+
+    try {
+      const { owner, repo, token, branch } = API.getConfig();
+      if (!token || !owner || !repo) throw new Error('Configuration incomplete');
+
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+        headers: { Authorization: `token ${token}` },
+      });
+
+      if (!res.ok) throw new Error(`GitHub returned ${res.status}`);
+      const data = await res.json();
+
+      resultEl.style.background = 'var(--success-light)';
+      resultEl.style.borderLeft = '4px solid var(--success)';
+      resultEl.textContent = `✅ Connected to ${data.full_name} (${data.private ? 'private' : 'public'}) on branch "${branch}"`;
+    } catch (err) {
+      resultEl.style.background = 'var(--danger-light)';
+      resultEl.style.borderLeft = '4px solid var(--danger)';
+      resultEl.textContent = `❌ Connection failed: ${err.message}`;
+    }
+  }
+
+  function saveLocalSettings() {
+    localStorage.setItem('advance_days', document.getElementById('advance-days').value);
+    toast('Timing preference saved! ⏰');
+  }
+
+  function clearLocalData() {
+    if (!confirm('Clear all local settings? Your repo data will not be affected.')) return;
+    ['gh_token','gh_owner','gh_repo','gh_branch','advance_days'].forEach(k => localStorage.removeItem(k));
+    loadForm();
+    toast('Local settings cleared 🗑️');
+  }
+
+  loadForm();
+</script>
+</body>
+</html>
