@@ -141,7 +141,7 @@ function buildTestEmailHtml() {
       <p style="color:#6B7280;font-size:0.88rem;margin:0 0 16px">
         This test email was triggered manually from the app. Real birthday notifications will be sent automatically every day at <strong>8:00 AM UTC</strong> when birthdays are coming up.
       </p>
-      <div style="background:linear-gradient(135deg,#FFF0F8,#FFE4F0);border:1.5px solid #FBBFD4;border-radius:12px;padding:16px 20px;margin-bottom:16px">
+      <div style="background-color:#FBCFE8;background-image:linear-gradient(135deg,#FCE7F3,#F9A8D4);border:1.5px solid #F472B6;border-radius:12px;padding:16px 20px;margin-bottom:16px">
         <div style="font-weight:700;color:#1F2937;margin-bottom:6px">🎂 Sample Birthday</div>
         <div style="color:#4B5563;font-size:0.88rem">Jane Doe — March 26 — 🎉 Today!</div>
         <div style="color:#7C3AED;font-size:0.88rem;margin-top:6px">✝️ May God bless Jane Doe abundantly on this special day! 🙏</div>
