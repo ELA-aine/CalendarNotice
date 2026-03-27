@@ -136,17 +136,11 @@
       <h2>📋 Add Email List</h2>
       <button class="modal-close" onclick="closeModal('bulk-email-modal')">✕</button>
     </div>
-    <div class="form-group">
-      <label class="form-label">Paste emails ✉️</label>
-      <textarea id="bulk-email-input" class="form-control" rows="8"
-        placeholder="One email per line, or comma/semicolon separated:&#10;&#10;alice@example.com&#10;bob@example.com&#10;carol@example.com"
-        style="resize:vertical;font-family:monospace;font-size:0.88rem"></textarea>
-      <div class="form-hint">Duplicates already on the list will be skipped automatically.</div>
-    </div>
-    <div id="bulk-email-preview" style="display:none;margin-bottom:14px"></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end">
+    <div id="bulk-email-rows" style="display:flex;flex-direction:column;gap:10px;max-height:55vh;overflow-y:auto;padding-right:4px"></div>
+    <button class="btn btn-ghost" style="width:100%;margin-top:12px;border-style:dashed" onclick="addBulkEmailRow()">＋ Add Another</button>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
       <button class="btn btn-ghost" onclick="closeModal('bulk-email-modal')">Cancel</button>
-      <button class="btn btn-primary" id="bulk-email-btn" onclick="saveBulkEmails()">✅ Add All</button>
+      <button class="btn btn-primary" id="bulk-email-btn" onclick="saveBulkEmails()">💾 Save All</button>
     </div>
   </div>
 </div>
@@ -266,28 +260,57 @@
     removeId = null;
   }
 
+  let bulkEmailCount = 0;
+
   function openBulkModal() {
-    document.getElementById('bulk-email-input').value = '';
-    document.getElementById('bulk-email-preview').style.display = 'none';
+    bulkEmailCount = 0;
+    document.getElementById('bulk-email-rows').innerHTML = '';
+    addBulkEmailRow();
     openModal('bulk-email-modal');
+  }
+
+  function addBulkEmailRow() {
+    const id = bulkEmailCount++;
+    const container = document.getElementById('bulk-email-rows');
+    const row = document.createElement('div');
+    row.id = `bulk-email-row-${id}`;
+    row.style.cssText = 'display:flex;gap:8px;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px';
+    row.innerHTML = `
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <input type="text" class="form-control be-name" placeholder="Name" style="padding:8px 12px;font-size:0.9rem" />
+        <input type="email" class="form-control be-email" placeholder="Email address" style="padding:8px 12px;font-size:0.9rem" />
+      </div>
+      <button type="button" onclick="removeBulkEmailRow(${id})"
+        style="background:var(--danger-light);color:var(--danger);border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:0.8rem;flex-shrink:0">✕</button>
+    `;
+    container.appendChild(row);
+    row.querySelector('.be-name').focus();
+  }
+
+  function removeBulkEmailRow(id) {
+    document.getElementById(`bulk-email-row-${id}`)?.remove();
   }
 
   async function saveBulkEmails() {
     if (!API.isConfigured()) { toast('Configure GitHub settings first! ⚙️', 'warning'); return; }
 
-    const raw = document.getElementById('bulk-email-input').value;
-    const parsed = raw.split(/[\n,;]+/).map(e => e.trim().toLowerCase()).filter(e => e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
-    const unique = [...new Set(parsed)];
-    const newOnes = unique.filter(e => !allEmails.some(x => x.email.toLowerCase() === e));
+    const rows = document.querySelectorAll('[id^="bulk-email-row-"]');
+    const toAdd = [];
+    for (const row of rows) {
+      const name  = row.querySelector('.be-name').value.trim();
+      const email = row.querySelector('.be-email').value.trim().toLowerCase();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) continue;
+      if (allEmails.some(x => x.email.toLowerCase() === email)) continue; // skip dups
+      toAdd.push({ id: generateId(), email, label: name || null, addedAt: new Date().toISOString() });
+    }
 
-    if (!newOnes.length) { toast('No new valid emails found.', 'warning'); return; }
+    if (!toAdd.length) { toast('No new valid emails found.', 'warning'); return; }
 
     const btn = document.getElementById('bulk-email-btn');
     btn.disabled = true;
     btn.textContent = 'Saving...';
 
     try {
-      const toAdd = newOnes.map(e => ({ id: generateId(), email: e, label: null, addedAt: new Date().toISOString() }));
       const list = [...allEmails, ...toAdd];
       await API.saveEmails(list);
       allEmails = list;
