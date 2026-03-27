@@ -266,7 +266,7 @@ body {
   border-radius: var(--radius);
   padding: 32px;
   width: 100%;
-  max-width: 500px;
+  max-width: 680px;
   box-shadow: 0 24px 64px rgba(0,0,0,0.18);
   animation: popIn 0.25s ease;
   max-height: 90vh;
