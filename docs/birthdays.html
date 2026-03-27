@@ -513,7 +513,7 @@
       allBirthdays = list;
       renderTable(allBirthdays);
       closeModal('birthday-modal');
-      toast(editId ? `Updated ${entry.name}! ✏️` : `Added ${entry.name}! 🎉`);
+      toast(editId ? `Updated ${entry.name}! ✏️` : `Added ${entry.name}! 🎉`); notifyDeploying();
     } catch (err) {
       toast('Save failed: ' + err.message, 'error');
     } finally {
@@ -537,7 +537,7 @@
       allBirthdays = list;
       renderTable(allBirthdays);
       closeModal('delete-modal');
-      toast('Birthday removed 🗑️');
+      toast('Birthday removed 🗑️'); notifyDeploying();
     } catch (err) {
       toast('Delete failed: ' + err.message, 'error');
     }
@@ -610,7 +610,7 @@
       allBirthdays = list;
       toggleSelectMode();
       renderTable(allBirthdays);
-      toast(`Deleted ${selectedIds.size || 'selected'} birthdays 🗑️`);
+      toast(`Deleted ${selectedIds.size || 'selected'} birthdays 🗑️`); notifyDeploying();
     } catch (err) {
       toast('Delete failed: ' + err.message, 'error');
     }
@@ -797,7 +797,7 @@
       allBirthdays = list;
       renderTable(allBirthdays);
       closeModal('bulk-birthday-modal');
-      toast(`Added ${toAdd.length} birthday${toAdd.length > 1 ? 's' : ''}! 🎉`);
+      toast(`Added ${toAdd.length} birthday${toAdd.length > 1 ? 's' : ''}! 🎉`); notifyDeploying();
     } catch (err) {
       toast('Save failed: ' + err.message, 'error');
     } finally {
@@ -975,7 +975,7 @@
       allBirthdays = list;
       renderTable(allBirthdays);
       closeImportModal();
-      toast(`Imported ${toAdd.length} birthday${toAdd.length > 1 ? 's' : ''}! 🎉`);
+      toast(`Imported ${toAdd.length} birthday${toAdd.length > 1 ? 's' : ''}! 🎉`); notifyDeploying();
     } catch (err) {
       toast('Import failed: ' + err.message, 'error');
       btn.disabled = false;

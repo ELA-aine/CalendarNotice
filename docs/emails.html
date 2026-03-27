@@ -250,7 +250,7 @@
       allEmails = list;
       renderEmails();
       closeModal('edit-email-modal');
-      toast('Email updated! ✏️');
+      toast('Email updated! ✏️'); notifyDeploying();
     } catch (err) {
       toast('Save failed: ' + err.message, 'error');
     }
@@ -296,7 +296,7 @@
       allEmails = list;
       renderEmails();
       closeModal('email-modal');
-      toast(`Added ${email}! 🎉`);
+      toast(`Added ${email}! 🎉`); notifyDeploying();
     } catch (err) {
       toast('Save failed: ' + err.message, 'error');
     } finally {
@@ -319,7 +319,7 @@
       allEmails = list;
       renderEmails();
       closeModal('remove-modal');
-      toast('Email removed 🗑️');
+      toast('Email removed 🗑️'); notifyDeploying();
     } catch (err) {
       toast('Remove failed: ' + err.message, 'error');
     }
@@ -384,7 +384,7 @@
       allEmails = list;
       renderEmails();
       closeModal('bulk-email-modal');
-      toast(`Added ${toAdd.length} email${toAdd.length > 1 ? 's' : ''}! 🎉`);
+      toast(`Added ${toAdd.length} email${toAdd.length > 1 ? 's' : ''}! 🎉`); notifyDeploying();
     } catch (err) {
       toast('Save failed: ' + err.message, 'error');
     } finally {
