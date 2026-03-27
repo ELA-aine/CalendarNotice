@@ -171,10 +171,11 @@ async function main() {
     process.exit(1);
   }
 
-  const birthdays = JSON.parse(fs.readFileSync(birthdaysPath, 'utf8'));
-  const emails    = JSON.parse(fs.readFileSync(emailsPath, 'utf8'));
+  const birthdays  = JSON.parse(fs.readFileSync(birthdaysPath, 'utf8'));
+  const allEmails  = JSON.parse(fs.readFileSync(emailsPath, 'utf8'));
+  const emails     = allEmails.filter(e => e.active !== false);
 
-  console.log(`   Loaded ${birthdays.length} birthdays, ${emails.length} email recipients`);
+  console.log(`   Loaded ${birthdays.length} birthdays, ${emails.length} active recipients (${allEmails.length} total)`);
 
   if (!emails.length) {
     console.log('ℹ️  No email recipients configured. Exiting.');
@@ -190,6 +191,7 @@ async function main() {
     }
     const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: GMAIL_USER, pass: GMAIL_PASS } });
     const toList = emails.map(e => e.email).join(', ');
+    if (!toList) { console.log('ℹ️  No active recipients. Exiting.'); return; }
     const info = await transporter.sendMail({
       from: `"🎂 Joshua Fellowship Birthday Calendar" <${GMAIL_USER}>`,
       to: toList,

@@ -58,11 +58,11 @@
   <!-- Info card -->
   <div class="card mb-3" style="background:var(--accent-light);border-color:var(--accent);padding:16px 20px">
     <div style="display:flex;align-items:flex-start;gap:12px">
-      <span style="font-size:1.4rem">💡</span>
+      <span style="font-size:1.4rem">💌</span>
       <div>
-        <div style="font-weight:800;margin-bottom:4px">How it works</div>
+        <div style="font-weight:800;margin-bottom:4px">Internal Fellowship Notifications</div>
         <div style="font-size:0.88rem;color:var(--text-muted)">
-          A GitHub Actions workflow runs every day at <strong>8:00 AM UTC</strong>. It checks for upcoming birthdays (today &amp; next 3 days) and sends a warm birthday email to everyone on this list. Christian birthdays get a faith-based greeting 🙏
+          Birthday emails are sent <strong>internally</strong> to those who currently serve in fellowship. Remember to send a warm birthday message to care for our fellow brothers and sisters! 🙏 If someone is temporarily not serving, <strong>deactivate</strong> their email — they'll be skipped until you activate them again.
         </div>
       </div>
     </div>
@@ -198,7 +198,8 @@
     const empty = document.getElementById('empty-state');
     const count = document.getElementById('email-count');
 
-    count.textContent = `${allEmails.length} ${allEmails.length === 1 ? 'recipient' : 'recipients'}`;
+    const activeCount = allEmails.filter(e => e.active !== false).length;
+    count.textContent = `${activeCount} active · ${allEmails.length} total`;
 
     if (!allEmails.length) {
       grid.innerHTML = '';
@@ -210,23 +211,30 @@
     grid.style.display = 'flex';
     empty.style.display = 'none';
 
-    grid.innerHTML = allEmails.map(e => `
-      <div class="email-card">
-        <div class="email-avatar">📧</div>
+    grid.innerHTML = allEmails.map(e => {
+      const isActive = e.active !== false;
+      return `
+      <div class="email-card" style="${isActive ? '' : 'opacity:0.5;background:#F9FAFB'}">
+        <div class="email-avatar" style="${isActive ? '' : 'background:var(--bg);color:var(--text-light)'}">📧</div>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:nowrap;overflow:hidden">
-            ${e.name ? `<span style="font-weight:900;font-size:0.95rem;color:var(--primary);white-space:nowrap">${e.name}</span><span style="color:var(--text-light);font-size:0.85rem">·</span>` : ''}
-            <span class="email-address" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.email}</span>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow:hidden">
+            ${e.name ? `<span style="font-weight:900;font-size:0.95rem;color:${isActive ? 'var(--primary)' : 'var(--text-muted)'};white-space:nowrap">${e.name}</span><span style="color:var(--text-light);font-size:0.85rem">·</span>` : ''}
+            <span class="email-address" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${isActive ? '' : 'var(--text-muted)'}">${e.email}</span>
+            ${!isActive ? '<span class="badge badge-yellow" style="flex-shrink:0">Inactive</span>' : ''}
           </div>
           ${e.label ? `<div class="email-added">🏷️ ${e.label}</div>` : ''}
           <div class="email-added">Added ${e.addedAt ? new Date(e.addedAt).toLocaleDateString() : 'recently'}</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn btn-ghost btn-sm" onclick="editEmail('${e.id}')">✏️ Edit</button>
+          ${isActive
+            ? `<button class="btn btn-ghost btn-sm" onclick="toggleActive('${e.id}', false)">⏸ Deactivate</button>`
+            : `<button class="btn btn-sm" style="background:var(--success-light);color:var(--success)" onclick="toggleActive('${e.id}', true)">▶ Activate</button>`
+          }
+          <button class="btn btn-ghost btn-sm" onclick="editEmail('${e.id}')">✏️</button>
           <button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger)" onclick="removeEmail('${e.id}','${e.email.replace(/'/g,"\\'")}')">🗑️</button>
         </div>
       </div>
-    `).join('');
+    `}).join('');
   }
 
   function editEmail(id) {
@@ -326,6 +334,19 @@
       toast('Remove failed: ' + err.message, 'error');
     }
     removeId = null;
+  }
+
+  async function toggleActive(id, active) {
+    try {
+      const list = allEmails.map(e => e.id === id ? { ...e, active } : e);
+      await API.saveEmails(list);
+      allEmails = list;
+      renderEmails();
+      toast(active ? '▶ Email activated!' : '⏸ Email deactivated!');
+      notifyDeploying();
+    } catch (err) {
+      toast('Failed: ' + err.message, 'error');
+    }
   }
 
   let bulkEmailCount = 0;
