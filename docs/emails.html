@@ -48,7 +48,10 @@
       <h1>📧 Email Notifications</h1>
       <p>These addresses receive birthday alerts automatically</p>
     </div>
-    <button class="btn btn-primary" onclick="openAddModal()">＋ Add Email</button>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="sendTestEmail()" id="test-btn">🧪 Send Test Email</button>
+      <button class="btn btn-primary" onclick="openAddModal()">＋ Add Email</button>
+    </div>
   </div>
 
   <!-- Info card -->
@@ -238,6 +241,51 @@
       toast('Remove failed: ' + err.message, 'error');
     }
     removeId = null;
+  }
+
+  async function sendTestEmail() {
+    if (!API.isConfigured()) {
+      toast('Please configure GitHub settings first! ⚙️', 'warning');
+      return;
+    }
+    if (!allEmails.length) {
+      toast('Add at least one email address first! 📧', 'warning');
+      return;
+    }
+
+    const btn = document.getElementById('test-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Triggering...';
+
+    try {
+      const { token, owner, repo, branch } = API.getConfig();
+      const res = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/actions/workflows/birthday-check.yml/dispatches`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `token ${token}`,
+            Accept: 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ref: branch || 'main', inputs: { test_mode: 'true', dry_run: 'false' } }),
+        }
+      );
+
+      if (res.status === 204) {
+        toast('Test email triggered! Check your inbox in ~1 minute 📬');
+      } else if (res.status === 422) {
+        toast('Workflow not found on that branch. Push first? 🤔', 'error');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast(`Failed (${res.status}): ${err.message || 'Check your PAT has Actions: write permission'}`, 'error');
+      }
+    } catch (err) {
+      toast('Error: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🧪 Send Test Email';
+    }
   }
 
   loadEmails();

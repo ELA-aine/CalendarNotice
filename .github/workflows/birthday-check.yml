@@ -10,6 +10,10 @@ on:
         description: 'Dry run (log emails but do not send)'
         required: false
         default: 'false'
+      test_mode:
+        description: 'Test mode (send a sample email to verify setup)'
+        required: false
+        default: 'false'
 
 jobs:
   check-birthdays:
@@ -34,4 +38,5 @@ jobs:
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
           DAYS_AHEAD: '3'
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          TEST_MODE: ${{ github.event.inputs.test_mode || 'false' }}
         run: node .github/scripts/birthday-mailer.js

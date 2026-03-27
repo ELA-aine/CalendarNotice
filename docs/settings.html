@@ -104,8 +104,7 @@
         <label class="form-label">Personal Access Token (PAT) 🔑</label>
         <input type="password" id="gh-token" class="form-control" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="new-password" />
         <div class="form-hint">
-          Needs <strong>repo</strong> scope. Stored only in your browser's localStorage — never sent anywhere except GitHub's API.
-          <a href="https://github.com/settings/tokens/new?scopes=repo&description=BirthdayNotice" target="_blank" rel="noopener" style="color:var(--primary)">Create a token →</a>
+          Fine-grained PAT needs: <strong>Contents: Read &amp; Write</strong> + <strong>Actions: Write</strong> (for test email button). Stored only in your browser's localStorage — never sent anywhere except GitHub's API.
         </div>
       </div>
       <div style="display:flex;gap:10px">
