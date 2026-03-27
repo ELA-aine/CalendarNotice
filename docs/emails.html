@@ -50,6 +50,7 @@
     </div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-ghost" onclick="sendTestEmail()" id="test-btn">🧪 Send Test Email</button>
+      <button class="btn btn-ghost" onclick="openBulkModal()">📋 Add List</button>
       <button class="btn btn-primary" onclick="openAddModal()">＋ Add Email</button>
     </div>
   </div>
@@ -124,6 +125,28 @@
     <div style="display:flex;gap:10px;justify-content:flex-end">
       <button class="btn btn-ghost" onclick="closeModal('remove-modal')">Cancel</button>
       <button class="btn btn-danger" onclick="confirmRemove()">🗑️ Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk add emails modal -->
+<div class="modal-overlay" id="bulk-email-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h2>📋 Add Email List</h2>
+      <button class="modal-close" onclick="closeModal('bulk-email-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Paste emails ✉️</label>
+      <textarea id="bulk-email-input" class="form-control" rows="8"
+        placeholder="One email per line, or comma/semicolon separated:&#10;&#10;alice@example.com&#10;bob@example.com&#10;carol@example.com"
+        style="resize:vertical;font-family:monospace;font-size:0.88rem"></textarea>
+      <div class="form-hint">Duplicates already on the list will be skipped automatically.</div>
+    </div>
+    <div id="bulk-email-preview" style="display:none;margin-bottom:14px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('bulk-email-modal')">Cancel</button>
+      <button class="btn btn-primary" id="bulk-email-btn" onclick="saveBulkEmails()">✅ Add All</button>
     </div>
   </div>
 </div>
@@ -241,6 +264,42 @@
       toast('Remove failed: ' + err.message, 'error');
     }
     removeId = null;
+  }
+
+  function openBulkModal() {
+    document.getElementById('bulk-email-input').value = '';
+    document.getElementById('bulk-email-preview').style.display = 'none';
+    openModal('bulk-email-modal');
+  }
+
+  async function saveBulkEmails() {
+    if (!API.isConfigured()) { toast('Configure GitHub settings first! ⚙️', 'warning'); return; }
+
+    const raw = document.getElementById('bulk-email-input').value;
+    const parsed = raw.split(/[\n,;]+/).map(e => e.trim().toLowerCase()).filter(e => e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+    const unique = [...new Set(parsed)];
+    const newOnes = unique.filter(e => !allEmails.some(x => x.email.toLowerCase() === e));
+
+    if (!newOnes.length) { toast('No new valid emails found.', 'warning'); return; }
+
+    const btn = document.getElementById('bulk-email-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+      const toAdd = newOnes.map(e => ({ id: generateId(), email: e, label: null, addedAt: new Date().toISOString() }));
+      const list = [...allEmails, ...toAdd];
+      await API.saveEmails(list);
+      allEmails = list;
+      renderEmails();
+      closeModal('bulk-email-modal');
+      toast(`Added ${toAdd.length} email${toAdd.length > 1 ? 's' : ''}! 🎉`);
+    } catch (err) {
+      toast('Save failed: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✅ Add All';
+    }
   }
 
   async function sendTestEmail() {

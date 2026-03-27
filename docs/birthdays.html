@@ -51,6 +51,7 @@
     </div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-ghost" onclick="openImportModal()">📂 Import CSV</button>
+      <button class="btn btn-ghost" onclick="openBulkBirthdayModal()">📋 Add List</button>
       <button class="btn btn-primary" onclick="openAddModal()">＋ Add Birthday</button>
     </div>
   </div>
@@ -230,6 +231,44 @@
     <div style="display:flex;gap:10px;justify-content:flex-end">
       <button class="btn btn-ghost" onclick="closeModal('delete-modal')">Cancel</button>
       <button class="btn btn-danger" onclick="confirmDelete()">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk add birthdays modal -->
+<div class="modal-overlay" id="bulk-birthday-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h2>📋 Add Birthday List</h2>
+      <button class="modal-close" onclick="closeModal('bulk-birthday-modal')">✕</button>
+    </div>
+
+    <div id="bulk-bday-step1">
+      <div class="form-group">
+        <label class="form-label">Paste birthdays ✨</label>
+        <textarea id="bulk-bday-input" class="form-control" rows="9"
+          placeholder="One birthday per line:&#10;Name, Month, Day&#10;Name, Month, Day, Year&#10;&#10;Examples:&#10;Alice, 3, 26&#10;Bob, 11, 7, 1995&#10;Carol, 7, 4"
+          style="resize:vertical;font-family:monospace;font-size:0.88rem"></textarea>
+        <div class="form-hint">Format: <strong>Name, Month (1-12), Day</strong> — year is optional. Gender and faith can be set after import.</div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeModal('bulk-birthday-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="parseBulkBirthdays()">Preview →</button>
+      </div>
+    </div>
+
+    <div id="bulk-bday-step2" style="display:none">
+      <div id="bulk-bday-summary" style="margin-bottom:12px"></div>
+      <div style="max-height:280px;overflow-y:auto;border:1.5px solid var(--border);border-radius:var(--radius-sm)">
+        <table class="table-cute">
+          <thead><tr><th>Name</th><th>Month</th><th>Day</th><th>Year</th><th>Status</th></tr></thead>
+          <tbody id="bulk-bday-preview"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+        <button class="btn btn-ghost" onclick="resetBulkBirthday()">← Back</button>
+        <button class="btn btn-primary" id="bulk-bday-confirm-btn" onclick="confirmBulkBirthdays()">✅ Add All</button>
+      </div>
     </div>
   </div>
 </div>
@@ -550,6 +589,100 @@
   document.addEventListener('click', () => {
     document.getElementById('contact-popover').classList.remove('open');
   });
+
+  // ── Bulk Birthday Add ─────────────────────────────────────────────────
+  let bulkParsed = [];
+
+  function openBulkBirthdayModal() {
+    resetBulkBirthday();
+    openModal('bulk-birthday-modal');
+  }
+
+  function resetBulkBirthday() {
+    bulkParsed = [];
+    document.getElementById('bulk-bday-input').value = '';
+    document.getElementById('bulk-bday-step1').style.display = 'block';
+    document.getElementById('bulk-bday-step2').style.display = 'none';
+  }
+
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function parseBulkBirthdays() {
+    const raw = document.getElementById('bulk-bday-input').value.trim();
+    if (!raw) { toast('Please enter some birthdays first.', 'warning'); return; }
+
+    bulkParsed = [];
+    const lines = raw.split(/\r?\n/).filter(l => l.trim());
+
+    lines.forEach((line, i) => {
+      const parts = line.split(',').map(p => p.trim());
+      const name  = parts[0];
+      const month = parseInt(parts[1]);
+      const day   = parseInt(parts[2]);
+      const year  = parseInt(parts[3]) || null;
+
+      if (!name) return;
+      if (!month || month < 1 || month > 12 || !day || day < 1 || day > 31) {
+        bulkParsed.push({ _error: `Line ${i+1}: invalid month/day`, name: parts[0] || '?' });
+        return;
+      }
+
+      const isDup = allBirthdays.some(b => b.name.toLowerCase() === name.toLowerCase() && b.month === month && b.day === day);
+      bulkParsed.push({ id: generateId(), name, month, day, year, gender: 'male', christian: false, attends: true, contact: {}, _dup: isDup });
+    });
+
+    const valid  = bulkParsed.filter(r => !r._error && !r._dup);
+    const dups   = bulkParsed.filter(r => r._dup);
+    const errors = bulkParsed.filter(r => r._error);
+
+    document.getElementById('bulk-bday-summary').innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="badge badge-green">✅ ${valid.length} new</span>
+        ${dups.length   ? `<span class="badge badge-yellow">⚠️ ${dups.length} duplicate${dups.length>1?'s':''}</span>` : ''}
+        ${errors.length ? `<span class="badge badge-red">❌ ${errors.length} error${errors.length>1?'s':''}</span>` : ''}
+      </div>`;
+
+    document.getElementById('bulk-bday-confirm-btn').textContent = `✅ Add ${valid.length} Birthdays`;
+    document.getElementById('bulk-bday-confirm-btn').disabled = valid.length === 0;
+
+    document.getElementById('bulk-bday-preview').innerHTML = bulkParsed.map(r => {
+      if (r._error) return `<tr style="opacity:0.5"><td colspan="4">${r.name}</td><td><span class="badge badge-red">error</span></td></tr>`;
+      return `<tr style="${r._dup ? 'opacity:0.5' : ''}">
+        <td><strong>${r.name}</strong></td>
+        <td>${MONTH_NAMES[(r.month||1)-1]}</td>
+        <td>${r.day}</td>
+        <td>${r.year || '—'}</td>
+        <td>${r._dup ? '<span class="badge badge-yellow">duplicate</span>' : '<span class="badge badge-green">new</span>'}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('bulk-bday-step1').style.display = 'none';
+    document.getElementById('bulk-bday-step2').style.display = 'block';
+  }
+
+  async function confirmBulkBirthdays() {
+    if (!API.isConfigured()) { toast('Configure GitHub settings first! ⚙️', 'warning'); return; }
+
+    const toAdd = bulkParsed.filter(r => !r._error && !r._dup).map(({ _dup, _error, ...b }) => b);
+    if (!toAdd.length) return;
+
+    const btn = document.getElementById('bulk-bday-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+      const list = [...allBirthdays, ...toAdd];
+      await API.saveBirthdays(list);
+      allBirthdays = list;
+      renderTable(allBirthdays);
+      closeModal('bulk-birthday-modal');
+      toast(`Added ${toAdd.length} birthday${toAdd.length > 1 ? 's' : ''}! 🎉`);
+    } catch (err) {
+      toast('Save failed: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = `✅ Add ${toAdd.length} Birthdays`;
+    }
+  }
 
   // ── CSV Import ────────────────────────────────────────────────────────
   let parsedRows = [];
