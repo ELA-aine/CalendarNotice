@@ -84,4 +84,25 @@ const API = {
     const { sha } = await this.getFile('docs/data/emails.json');
     return this.putFile('docs/data/emails.json', list, sha);
   },
+
+  // ── Settings helpers ──────────────────────────────────────────────
+  async getSettings() {
+    try {
+      const { content } = await this.getFile('docs/data/settings.json');
+      return content;
+    } catch (e) {
+      console.warn('Could not load settings:', e.message);
+      return { daysAhead: 3 };
+    }
+  },
+
+  async saveSettings(settings) {
+    let sha;
+    try {
+      ({ sha } = await this.getFile('docs/data/settings.json'));
+    } catch (e) {
+      sha = undefined;
+    }
+    return this.putFile('docs/data/settings.json', settings, sha);
+  },
 };

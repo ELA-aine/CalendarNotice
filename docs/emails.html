@@ -68,6 +68,23 @@
     </div>
   </div>
 
+  <!-- Notification timing -->
+  <div class="card mb-3" style="padding:16px 20px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-size:1.2rem">🔔</span>
+      <div style="flex:1;min-width:160px">
+        <div style="font-weight:800;margin-bottom:2px">Notify before birthday</div>
+        <div style="font-size:0.85rem;color:var(--text-muted)">How early should reminder emails be sent?</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="days-ahead-btns">
+        <button class="btn btn-ghost btn-sm days-btn" data-days="0" onclick="setDaysAhead(0)">On the day</button>
+        <button class="btn btn-ghost btn-sm days-btn" data-days="3" onclick="setDaysAhead(3)">3 days</button>
+        <button class="btn btn-ghost btn-sm days-btn" data-days="5" onclick="setDaysAhead(5)">5 days</button>
+        <button class="btn btn-ghost btn-sm days-btn" data-days="7" onclick="setDaysAhead(7)">1 week</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Email count -->
   <div class="flex-between mb-2">
     <span id="email-count" class="badge badge-pink">0 recipients</span>
@@ -207,6 +224,41 @@
 <script>
   let allEmails = [];
   let removeId = null;
+  let currentSettings = { daysAhead: 3 };
+
+  function renderDaysAheadButtons(daysAhead) {
+    document.querySelectorAll('.days-btn').forEach(btn => {
+      const active = parseInt(btn.dataset.days) === daysAhead;
+      btn.className = active
+        ? 'btn btn-primary btn-sm days-btn'
+        : 'btn btn-ghost btn-sm days-btn';
+    });
+  }
+
+  async function loadSettings() {
+    try {
+      currentSettings = await API.getSettings();
+    } catch (e) {
+      currentSettings = { daysAhead: 3 };
+    }
+    renderDaysAheadButtons(currentSettings.daysAhead);
+  }
+
+  async function setDaysAhead(days) {
+    if (!API.isConfigured()) { toast('Configure GitHub settings first! ⚙️', 'warning'); return; }
+    const prev = currentSettings.daysAhead;
+    currentSettings = { ...currentSettings, daysAhead: days };
+    renderDaysAheadButtons(days);
+    try {
+      await API.saveSettings(currentSettings);
+      const label = days === 0 ? 'on the day' : days === 7 ? '1 week before' : `${days} days before`;
+      toast(`Reminders will be sent ${label} 🔔`); notifyDeploying();
+    } catch (err) {
+      currentSettings = { ...currentSettings, daysAhead: prev };
+      renderDaysAheadButtons(prev);
+      toast('Save failed: ' + err.message, 'error');
+    }
+  }
 
   async function loadEmails() {
     try {
@@ -518,6 +570,7 @@
   }
 
   loadEmails();
+  loadSettings();
 </script>
 </body>
 </html>

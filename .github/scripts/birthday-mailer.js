@@ -13,10 +13,24 @@ const path = require('path');
 // ── Config ────────────────────────────────────────────────────────────
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_PASS = process.env.GMAIL_PASS;
-const DAYS_AHEAD = parseInt(process.env.DAYS_AHEAD || '3', 10);
 const DRY_RUN         = process.env.DRY_RUN === 'true';
 const TEST_MODE       = process.env.TEST_MODE === 'true';
 const TEST_RECIPIENT  = (process.env.TEST_RECIPIENT || '').trim();
+
+// Read daysAhead from settings.json if available, otherwise fall back to env var
+function loadDaysAhead() {
+  const settingsPath = path.join(process.cwd(), 'docs/data/settings.json');
+  if (fs.existsSync(settingsPath)) {
+    try {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      if (typeof settings.daysAhead === 'number') return settings.daysAhead;
+    } catch (e) {
+      console.warn('Could not parse settings.json, using fallback.');
+    }
+  }
+  return parseInt(process.env.DAYS_AHEAD || '3', 10);
+}
+const DAYS_AHEAD = loadDaysAhead();
 
 // ── Helpers ───────────────────────────────────────────────────────────
 function daysUntilBirthday(month, day) {
@@ -163,9 +177,13 @@ async function main() {
   console.log(`🎂 Birthday Mailer — ${new Date().toISOString()}`);
   console.log(`   Days ahead: ${DAYS_AHEAD} | Dry run: ${DRY_RUN} | Test mode: ${TEST_MODE}`);
 
-  // Load data files
-  const birthdaysPath = path.join(process.cwd(), 'docs/data/birthdays.json');
-  const emailsPath    = path.join(process.cwd(), 'docs/data/emails.json');
+  // Load data files — paths can be overridden via env vars for private data repos
+  const birthdaysPath = process.env.BIRTHDAYS_PATH
+    ? path.resolve(process.env.BIRTHDAYS_PATH)
+    : path.join(process.cwd(), 'docs/data/birthdays.json');
+  const emailsPath = process.env.EMAILS_PATH
+    ? path.resolve(process.env.EMAILS_PATH)
+    : path.join(process.cwd(), 'docs/data/emails.json');
 
   if (!fs.existsSync(birthdaysPath) || !fs.existsSync(emailsPath)) {
     console.log('❌ Data files not found. Exiting.');
